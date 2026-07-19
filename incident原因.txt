@@ -1,0 +1,54 @@
+//已和司机沟通
+//lost 
+//delivered, message proof uploaded
+//delivered. POD can not be updated
+//delivered. POD updated
+//已归仓
+//已提醒司机
+//fixed, can not update POD
+//这单已经记丢过一次了，这个incident里面不记丢
+
+Shein invalid POD Mailbox
+This parcel is lost, it is a shein package. This parcel is delivered to mailbox
+
+Shein invalid POD
+This parcel is lost, it is a shein package. This parcel is delivered to a random corner
+
+Mailbox Room
+This parcel is delivered to mailbox room. Cx is complaining not able to find it. Please try to fix it. Thanks
+
+This parcel is delivered to mailbox room. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks
+
+This parcel is delivered to a random corner. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks
+
+No dropping location
+The POD does not include unit number nor dropping location, please get a message proof from cx, thanks
+
+Wrong Address
+The correct address is (unit xx), The POD is showing (unit xx).This parcel is delivered to the wrong address. Cx is complaining not able to find it. Please try to fix it.
+
+Signiture with no person
+POD is invalid since the POD does not include person's hand. Since there is a signature, I would assume the parcel was delivered. Can you please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered? Thanks
+
+POD is invalid since the POD does not include person's hand. Please make sure that you take a picture of the person's hand when you need a signature from cx next time. Thanks
+
+POD is invalid since the POD does not include person's hand. Please make sure that your drivers take a picture of the person's hand when they need a signature from cx next time. Thanks
+
+断更
+If you still have these parcels, please try to deliver them or return them to the office by the noon of Apr. 15th, or it will be marked lost, thanks
+If your drivers still have these parcels, please try to deliver them or return them to the office by the noon of Apr. 15th, or it will be marked lost, thanks
+
+这单需要签字但是送到门口了，照片里没有显示人的手或者有人签收，能发个短信确认一下包裹是否送达吗谢谢，谢谢
+//已提醒司机需要拍到交接的照片
+//如果之后有投诉没送到就记丢
+
+Dear xxx, This is UniUni Ottawa warehouse. We attempted to deliver your parcel (tracking: [xxx]); however, the address is incorrect or lacks a unit number (xxx) in our system. Please confirm the street#, unit#, and buzzer code if required by replying to this text message.
+Thank you!
+
+
+Please update this parcel, or it will be marked as lost soon, thanks.
+Hello X, your driver xxx still have x parcels in transit, and he has stopped for x minutes, if he has already finished them please make sure he will upload all the PODs, thanks.
+
+Damaged
+This parcel is reported leaked, please note if your driver find any parcel that is leaked or damaged, please ask the driver to return it to office and let office check before delivering in the morning.
+For this parcel, we will not charge your driver, but please notify your drivers about damaged and leaked parcels, thanks
