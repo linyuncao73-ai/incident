@@ -344,8 +344,37 @@ var PENALTIES = [
   {v:"49-Wrong deduction / Correction from previous settlement", cls:"pen-green"},
   {v:"50-Other subsidy", cls:"pen-green"}
 ];
-/* C 列下拉 */
+/* C 列下拉 + 表格里每个名字的 chip 颜色（照搬 Sheets 的下拉配色，Lin 是蓝色） */
 var HANDLERS = ["Lin","Evan","Theo","Larry","Eric","Maggie","Jasper","Jean","Baldwin","Kenny","Nicholas","Abhay"];
+var HANDLER_COLORS = {
+  Lin:      ["#D6E4F8","#12395F"],
+  Evan:     ["#E1EDB8","#3D4916"],
+  Theo:     ["#EFEFEF","#333333"],
+  Larry:    ["#CFE0F7","#12395F"],
+  Eric:     ["#C9E6A0","#2C4413"],
+  Maggie:   ["#E6D6F3","#432A5E"],
+  Jasper:   ["#4B2A87","#FFFFFF"],
+  Jean:     ["#EDEDED","#333333"],
+  Baldwin:  ["#1A1A1A","#FFFFFF"],
+  Kenny:    ["#EDEDED","#333333"],
+  Nicholas: ["#B01B1B","#FFFFFF"],
+  Abhay:    ["#EDEDED","#333333"]
+};
+/* I 列每类的填充色，也照搬表格：红=罚款、蓝=丢件、绿=补贴、白底=不扣钱 */
+var PEN_COLORS = {
+  "pen-red":    ["#C0161C","#FFFFFF"],
+  "pen-blue":   ["#2B5FC0","#FFFFFF"],
+  "pen-green":  ["#1E8449","#FFFFFF"],
+  "pen-yellow": ["#F1C232","#3D3000"],
+  "pen-brown":  ["#8D5B3F","#FFFFFF"],
+  "pen-purple": ["#6A3FA0","#FFFFFF"]
+};
+function paintHandler(node, name){
+  var c = HANDLER_COLORS[name] || ["#EDEDED","#333333"];
+  node.style.background = c[0];
+  node.style.color = c[1];
+  node.style.borderColor = "transparent";
+}
 var P15 = "15-Invalid POD (Proof of Delivery)";
 var P12 = "12-Delivered to the wrong address";
 var PFIX = "Fixed/no penality";
@@ -885,10 +914,12 @@ function rowTable(c){
   var cells = rowCells(c);
   cells.forEach(function(v,i){
     var td = el("td",null,v);
-    if(i === 2) td.className = "name";
+    if(i === 2){ td.className = "name"; paintHandler(td, v); }
     if(i === 8){
       var p = PENALTIES.filter(function(x){ return x.v === v; })[0];
       td.className = p ? p.cls : "pen-blank";
+      var pc = p && PEN_COLORS[p.cls];
+      if(pc){ td.style.background = pc[0]; td.style.color = pc[1]; td.style.fontWeight = "600"; }
     }
     if(!v && i !== 8) td.className = (td.className ? td.className+" " : "") + "empty";
     tr2.appendChild(td);
@@ -1088,8 +1119,10 @@ function toast(msg){
   }catch(e){}
   if(HANDLERS.indexOf(state.handler) < 0) state.handler = "Lin";
   hsel.value = state.handler;
+  paintHandler(hsel, state.handler);
   hsel.addEventListener("change", function(){
     state.handler = hsel.value;
+    paintHandler(hsel, hsel.value);
     try{ localStorage.setItem(LS_KEY+".handler", hsel.value); }catch(e){}
     renderAll(); save();
   });
