@@ -12,6 +12,10 @@
   --red:#9E2A1F; --red-bg:#FAE7E3; --red-line:#E8C3BB;
   --green:#1C6543; --green-bg:#E4F1E9; --green-line:#BEDCCB;
   --gray-bg:#EDE9E2;
+  --yellow:#7A5A05; --yellow-bg:#FAF0D2;
+  --blue:#1B4E8F; --blue-bg:#E3ECF9;
+  --purple:#5B3A86; --purple-bg:#EFE7F8;
+  --brown:#6B4326; --brown-bg:#F2E6DC;
   --ui: system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
   --mono: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono","Noto Sans Mono CJK SC",monospace;
   --r:8px;
@@ -23,6 +27,10 @@
     --red:#F0917F; --red-bg:#37201C; --red-line:#5B322A;
     --green:#7FCFA1; --green-bg:#1A2C22; --green-line:#2E4A38;
     --gray-bg:#2B2721;
+    --yellow:#E3C25C; --yellow-bg:#332B15;
+    --blue:#8FB6E8; --blue-bg:#1B2634;
+    --purple:#BFA0E0; --purple-bg:#2A2135;
+    --brown:#D0A585; --brown-bg:#2F241C;
   }
 }
 :root[data-theme="dark"]{
@@ -31,6 +39,10 @@
   --red:#F0917F; --red-bg:#37201C; --red-line:#5B322A;
   --green:#7FCFA1; --green-bg:#1A2C22; --green-line:#2E4A38;
   --gray-bg:#2B2721;
+  --yellow:#E3C25C; --yellow-bg:#332B15;
+  --blue:#8FB6E8; --blue-bg:#1B2634;
+  --purple:#BFA0E0; --purple-bg:#2A2135;
+  --brown:#D0A585; --brown-bg:#2F241C;
 }
 *{box-sizing:border-box}
 body{
@@ -51,6 +63,11 @@ a{color:var(--accent)}
 .brand h1{font-size:15px; font-weight:650; letter-spacing:.01em}
 .brand .sub{font-size:12px; color:var(--muted)}
 .topbar .spacer{flex:1}
+.handler{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted)}
+.handler select{
+  padding:4px 8px; border:1px solid var(--line2); border-radius:var(--r);
+  background:var(--accent-soft); color:var(--accent); font-weight:600;
+}
 .ghost{
   background:transparent; border:1px solid var(--line2); border-radius:var(--r);
   padding:5px 11px; font-size:12.5px;
@@ -197,6 +214,11 @@ table.tsv td:last-child{border-right:0}
 table.tsv td.pen-red{background:var(--red-bg); color:var(--red); font-weight:600}
 table.tsv td.pen-green{background:var(--green-bg); color:var(--green); font-weight:600}
 table.tsv td.pen-blank{background:var(--gray-bg); color:var(--muted)}
+table.tsv td.pen-gray{background:var(--gray-bg); color:var(--text); font-weight:600}
+table.tsv td.pen-yellow{background:var(--yellow-bg); color:var(--yellow); font-weight:600}
+table.tsv td.pen-blue{background:var(--blue-bg); color:var(--blue); font-weight:600}
+table.tsv td.pen-purple{background:var(--purple-bg); color:var(--purple); font-weight:600}
+table.tsv td.pen-brown{background:var(--brown-bg); color:var(--brown); font-weight:600}
 table.tsv td.name{background:var(--accent-soft); color:var(--accent); font-weight:600}
 table.tsv td.empty::after{content:"—"; color:var(--muted)}
 
@@ -230,6 +252,7 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
     <span class="sub">Ottawa Warehouse · 粘贴 → 消息 · 表格行 · Notes</span>
   </div>
   <div class="spacer"></div>
+  <label class="handler">记录人 <select id="handler"></select></label>
   <button class="ghost" id="btnRoster">名单</button>
   <button class="ghost" id="btnTheme">深/浅</button>
 </div>
@@ -295,12 +318,34 @@ var ROSTER = (function(){
   return map;
 })();
 
+/* I 列下拉：完全照搬表格的数据验证（含 Fixed/no penality、Warehouse relarted 的原拼法），
+   颜色也照搬，粘进 Sheets 才会匹配上下拉并自动上色 */
 var PENALTIES = [
-  {v:"", label:"（留空）待司机修复，5 天后再定", cls:"pen-blank"},
-  {v:"15-Invalid POD (Proof of Delivery)", label:"15-Invalid POD (Proof of Delivery)", cls:"pen-red"},
-  {v:"12-Delivered to the wrong address", label:"12-Delivered to the wrong address", cls:"pen-red"},
-  {v:"Fixed/no penality", label:"Fixed/no penality", cls:"pen-green"}
+  {v:"", label:"（留空）待司机修复，5 天后再定", cls:"pen-blank", top:true},
+  {v:"15-Invalid POD (Proof of Delivery)", cls:"pen-red", top:true},
+  {v:"12-Delivered to the wrong address", cls:"pen-red", top:true},
+  {v:"Fixed/no penality", cls:"pen-gray", top:true},
+  {v:"11-Delayed delivery / Delayed return", cls:"pen-purple"},
+  {v:"13-Driver lost parcel / Failed to return to warehouse", cls:"pen-yellow"},
+  {v:"14-Fake signature", cls:"pen-brown"},
+  {v:"16-Lost parcel during scan", cls:"pen-blue"},
+  {v:"17-Theft (with police case#)", cls:"pen-red"},
+  {v:"18-Violation of warehouse rules", cls:"pen-purple"},
+  {v:"19-Others deduction", cls:"pen-purple"},
+  {v:"Warehouse relarted", cls:"pen-gray"},
+  {v:"41-Driver delivered parcel after deduction", cls:"pen-green"},
+  {v:"42-Fuel subsidy", cls:"pen-green"},
+  {v:"43-Overweight subsidy", cls:"pen-green"},
+  {v:"44-Pallet unloading", cls:"pen-green"},
+  {v:"45-Package sorting", cls:"pen-green"},
+  {v:"46-Pickup subsidy", cls:"pen-green"},
+  {v:"47-Remote area / Low density subsidy", cls:"pen-green"},
+  {v:"48-Warehouse cleaning", cls:"pen-green"},
+  {v:"49-Wrong deduction / Correction from previous settlement", cls:"pen-green"},
+  {v:"50-Other subsidy", cls:"pen-green"}
 ];
+/* C 列下拉 */
+var HANDLERS = ["Lin","Evan","Theo","Larry","Eric","Maggie","Jasper","Jean","Baldwin","Kenny","Nicholas","Abhay"];
 var P15 = "15-Invalid POD (Proof of Delivery)";
 var P12 = "12-Delivered to the wrong address";
 var PFIX = "Fixed/no penality";
@@ -482,7 +527,7 @@ function parseOrderBlock(b){
    状态
    ============================================================ */
 var LS_KEY = "incidentTool.v1";
-var state = {date: todayStr(), cards: [], list: []};
+var state = {date: todayStr(), cards: [], list: [], handler: "Lin"};
 
 function todayStr(){
   var d = new Date();
@@ -594,7 +639,7 @@ function buildMessage(c){
     tailBlock;
 }
 function rowCells(c){
-  return [c.issueDate, c.deliveryDate, "Lin", c.broker, c.driverId,
+  return [c.issueDate, c.deliveryDate, state.handler || "Lin", c.broker, c.driverId,
           c.parcelNo, c.parcelId, c.address, c.penalty, c.reason];
 }
 function buildRow(c){ return rowCells(c).join("\t"); }
@@ -761,11 +806,14 @@ function renderCard(c){
   var fp = el("div","f");
   fp.appendChild(el("label",null,"是否记赔（表格第 9 列）"));
   var psel = el("select"); psel.dataset.k = "penalty";
+  var gTop = el("optgroup"), gRest = el("optgroup");
+  gTop.label = "常用"; gRest.label = "其他（表格下拉的全部选项）";
   PENALTIES.forEach(function(p){
-    var op = el("option",null,p.label); op.value = p.v;
+    var op = el("option",null,p.label || p.v); op.value = p.v;
     if(p.v === c.penalty) op.selected = true;
-    psel.appendChild(op);
+    (p.top ? gTop : gRest).appendChild(op);
   });
+  psel.appendChild(gTop); psel.appendChild(gRest);
   fp.appendChild(psel);
   if(!c.penalty && c.deliveryDate){
     fp.appendChild(el("div","sublabel","留空 → " + plusDays(c.deliveryDate,5) + " 复查，没修好就记赔"));
@@ -948,7 +996,7 @@ document.getElementById("btnParse").addEventListener("click", function(){
 
 document.getElementById("btnClear").addEventListener("click", function(){
   if(!confirm("清空所有卡片和列表？")) return;
-  state = {date: todayStr(), cards: [], list: []};
+  state = {date: todayStr(), cards: [], list: [], handler: state.handler};
   document.getElementById("raw").value = "";
   document.getElementById("parseHint").textContent = "";
   renderAll(); save();
@@ -1027,6 +1075,25 @@ function toast(msg){
 
 /* ---------- 启动 ---------- */
 (function init(){
+  load();
+
+  var hsel = document.getElementById("handler");
+  HANDLERS.forEach(function(h){
+    var o = document.createElement("option"); o.value = h; o.textContent = h;
+    hsel.appendChild(o);
+  });
+  try{
+    var h = localStorage.getItem(LS_KEY+".handler");
+    if(h && HANDLERS.indexOf(h) >= 0) state.handler = h;
+  }catch(e){}
+  if(HANDLERS.indexOf(state.handler) < 0) state.handler = "Lin";
+  hsel.value = state.handler;
+  hsel.addEventListener("change", function(){
+    state.handler = hsel.value;
+    try{ localStorage.setItem(LS_KEY+".handler", hsel.value); }catch(e){}
+    renderAll(); save();
+  });
+
   var dl = document.createElement("datalist");
   dl.id = "brokerList";
   BROKERS.forEach(function(b){ var o = document.createElement("option"); o.value = b; dl.appendChild(o); });
@@ -1035,7 +1102,6 @@ function toast(msg){
     var th = localStorage.getItem(LS_KEY+".theme");
     if(th) document.documentElement.setAttribute("data-theme", th);
   }catch(e){}
-  load();
   renderAll();
 })();
 </script>
