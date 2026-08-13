@@ -673,6 +673,33 @@ function rowCells(c){
 }
 function buildRow(c){ return rowCells(c).join("\t"); }
 
+/* 表格行的 HTML 版：带底色，粘进 Sheets 时颜色跟着走，
+   不用等目标行有下拉规则才显色。只写 background/color，字体交给表格自己 */
+function escHtml(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function buildRowHtml(c){
+  var cells = rowCells(c);
+  var tds = cells.map(function(v,i){
+    var css = "";
+    if(i === 2){
+      var hc = HANDLER_COLORS[v] || ["#EDEDED","#333333"];
+      css = "background-color:" + hc[0] + ";color:" + hc[1] + ";font-weight:bold;";
+    } else if(i === 8){
+      var p = PENALTIES.filter(function(x){ return x.v === v; })[0];
+      var pc = p && PEN_COLORS[p.cls];
+      if(pc) css = "background-color:" + pc[0] + ";color:" + pc[1] + ";font-weight:bold;";
+    }
+    return '<td style="border:none;' + css + '">' + escHtml(v) + "</td>";
+  }).join("");
+  return "<tr>" + tds + "</tr>";
+}
+function wrapRows(rowsHtml){
+  return '<meta charset="utf-8"><table style="border-collapse:collapse;border:none"><tbody>' +
+         rowsHtml + "</tbody></table>";
+}
+
 /* ============================================================
    渲染
    ============================================================ */
@@ -985,7 +1012,7 @@ document.getElementById("cards").addEventListener("click", function(e){
   if(act === "copyMsg"){
     copy(cardEl.querySelector("textarea.msg").value, btn, c.shein ? "Shein 简洁版已复制" : "消息已复制");
   } else if(act === "copyRow"){
-    copy(buildRow(c), btn, "表格行已复制，去 Sheets 粘贴");
+    copyRich(buildRow(c), wrapRows(buildRowHtml(c)), btn, "表格行已复制（带颜色）");
   } else if(act === "copyNotes"){
     copy(cardEl.querySelector("textarea.notes").value, btn, "Notes 已复制");
   } else if(act === "chip"){
@@ -1035,7 +1062,10 @@ document.getElementById("btnClear").addEventListener("click", function(){
 
 document.getElementById("btnCopyAll").addEventListener("click", function(){
   if(!state.cards.length){ toast("还没有单子"); return; }
-  copy(state.cards.map(buildRow).join("\n"), this, state.cards.length + " 行已复制");
+  copyRich(
+    state.cards.map(buildRow).join("\n"),
+    wrapRows(state.cards.map(buildRowHtml).join("")),
+    this, state.cards.length + " 行已复制（带颜色）");
 });
 document.getElementById("btnCopyMsgAll").addEventListener("click", function(){
   if(!state.cards.length){ toast("还没有单子"); return; }
@@ -1086,6 +1116,46 @@ function copy(text, btn, msg){
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
   } else fallback(text, done);
+}
+/* 同时写 text/plain 和 text/html。Sheets 优先读 html，于是底色跟着过去；
+   其他地方（记事本、WhatsApp）读到的还是纯文本 TSV */
+function copyRich(text, html, btn, msg){
+  function done(){
+    if(btn){
+      var old = btn.textContent;
+      btn.textContent = "已复制"; btn.classList.add("done");
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove("done"); }, 1400);
+    }
+    toast(msg || "已复制");
+  }
+  if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+    try{
+      var item = new ClipboardItem({
+        "text/plain": new Blob([text], {type:"text/plain"}),
+        "text/html":  new Blob([html], {type:"text/html"})
+      });
+      navigator.clipboard.write([item]).then(done, function(){ fallbackRich(html, done); });
+      return;
+    }catch(e){ /* 落到下面 */ }
+  }
+  fallbackRich(html, done);
+}
+/* 老浏览器 / file:// 下的兜底：选中一段隐藏的富文本再 execCommand('copy')，
+   浏览器会自动把 html 和纯文本两份都放进剪贴板 */
+function fallbackRich(html, done){
+  var d = document.createElement("div");
+  d.setAttribute("contenteditable","true");
+  d.innerHTML = html;
+  d.style.position = "fixed"; d.style.left = "-9999px"; d.style.top = "0";
+  document.body.appendChild(d);
+  var range = document.createRange();
+  range.selectNodeContents(d);
+  var sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+  try{ document.execCommand("copy"); done(); }
+  catch(e){ toast("复制失败，手动选中复制吧"); }
+  sel.removeAllRanges();
+  document.body.removeChild(d);
 }
 function fallback(text, done){
   var ta = document.createElement("textarea");
