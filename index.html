@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incident 处理台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B8480C'/%3E%3Cpath d='M16 7v12M16 23v2' stroke='%23fff' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#F6F3EF; --surface:#FFFFFF; --surface2:#FAF7F2; --line:#E5DFD6; --line2:#D6CEC2;
+  --text:#221F1B; --muted:#6C6559; --accent:#B8480C; --accent-soft:#FBEBDF;
+  --red:#9E2A1F; --red-bg:#FAE7E3; --red-line:#E8C3BB;
+  --green:#1C6543; --green-bg:#E4F1E9; --green-line:#BEDCCB;
+  --gray-bg:#EDE9E2;
+  --ui: system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono","Noto Sans Mono CJK SC",monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17150F; --surface:#201D18; --surface2:#26221C; --line:#37312A; --line2:#463F36;
+    --text:#EDE7DD; --muted:#9C9487; --accent:#F0842F; --accent-soft:#31241A;
+    --red:#F0917F; --red-bg:#37201C; --red-line:#5B322A;
+    --green:#7FCFA1; --green-bg:#1A2C22; --green-line:#2E4A38;
+    --gray-bg:#2B2721;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17150F; --surface:#201D18; --surface2:#26221C; --line:#37312A; --line2:#463F36;
+  --text:#EDE7DD; --muted:#9C9487; --accent:#F0842F; --accent-soft:#31241A;
+  --red:#F0917F; --red-bg:#37201C; --red-line:#5B322A;
+  --green:#7FCFA1; --green-bg:#1A2C22; --green-line:#2E4A38;
+  --gray-bg:#2B2721;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--ui);
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+button{font:inherit; color:inherit; cursor:pointer}
+input,select,textarea{font:inherit; color:inherit}
+a{color:var(--accent)}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
+  padding:10px 18px; background:var(--surface); border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:baseline; gap:10px}
+.brand h1{font-size:15px; font-weight:650; letter-spacing:.01em}
+.brand .sub{font-size:12px; color:var(--muted)}
+.topbar .spacer{flex:1}
+.ghost{
+  background:transparent; border:1px solid var(--line2); border-radius:var(--r);
+  padding:5px 11px; font-size:12.5px;
+}
+.ghost:hover{border-color:var(--accent); color:var(--accent)}
+.ghost:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent); outline-offset:1px;
+}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid; grid-template-columns:minmax(300px,360px) 1fr; gap:16px;
+  padding:16px 18px 86px; align-items:start; max-width:1600px; margin:0 auto;
+}
+@media (max-width:900px){ .layout{grid-template-columns:1fr} }
+.layout > *{min-width:0}
+.pane{position:sticky; top:57px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 130px); overflow-y:auto}
+@media (max-width:900px){ .pane{position:static} }
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px}
+.panel > h2{
+  font-size:11.5px; font-weight:650; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:10px;
+}
+#raw{
+  width:100%; height:210px; resize:vertical; padding:10px; border-radius:var(--r);
+  border:1px solid var(--line2); background:var(--surface2); font-family:var(--mono);
+  font-size:12px; line-height:1.45;
+}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.primary{
+  background:var(--accent); color:#fff; border:1px solid var(--accent);
+  border-radius:var(--r); padding:7px 15px; font-weight:600; font-size:13px;
+}
+.primary:hover{filter:brightness(1.07)}
+.hint{font-size:12px; color:var(--muted)}
+
+/* incident 列表（窄栏里按行排，不用表格） */
+.lrow{padding:7px 0; border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow.matched{
+  border-left:3px solid var(--accent); padding-left:8px;
+  margin-left:-11px; background:var(--accent-soft);
+}
+.lmeta{display:flex; gap:7px; align-items:baseline; flex-wrap:wrap; font-size:11.5px; color:var(--muted)}
+.lmeta .id{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text); font-weight:600}
+.lmeta .lvl{font-weight:600; color:var(--text)}
+.lmeta .sh{color:var(--red); font-weight:600}
+.lnote{font-size:12.5px; margin-top:2px}
+
+/* ---------- cards ---------- */
+#cards{display:flex; flex-direction:column; gap:16px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.card.shein{border-color:var(--red-line)}
+.chead{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:12px 14px; border-bottom:1px solid var(--line); background:var(--surface2);
+}
+.chead .pid{font-family:var(--mono); font-size:14px; font-weight:600; letter-spacing:.01em}
+.chead .spacer{flex:1}
+.pill{
+  font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px;
+  border:1px solid var(--line2); background:var(--gray-bg); white-space:nowrap;
+}
+.pill.red{color:var(--red); background:var(--red-bg); border-color:var(--red-line)}
+.pill.green{color:var(--green); background:var(--green-bg); border-color:var(--green-line)}
+.pill.accent{color:var(--accent); background:var(--accent-soft); border-color:var(--accent)}
+.warn{
+  display:flex; gap:8px; align-items:flex-start; margin:12px 14px 0; padding:8px 10px;
+  border-radius:var(--r); font-size:12.5px; background:var(--red-bg); color:var(--red);
+  border:1px solid var(--red-line);
+}
+.note{
+  margin:12px 14px 0; padding:8px 10px; border-radius:var(--r); font-size:12.5px;
+  background:var(--gray-bg); color:var(--muted); border:1px solid var(--line);
+}
+.note b{color:var(--text); font-weight:600}
+.sec{padding:12px 14px}
+.sec + .sec{border-top:1px solid var(--line)}
+.sec > h3{
+  font-size:11px; font-weight:650; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:9px;
+}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:9px 12px}
+.f{display:flex; flex-direction:column; gap:3px; min-width:0}
+.f > label{font-size:11px; color:var(--muted)}
+.f input,.f select,.f textarea{
+  width:100%; padding:5px 8px; border:1px solid var(--line2); border-radius:6px;
+  background:var(--surface2);
+}
+.f input.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+.f input.missing{border-color:var(--accent); background:var(--accent-soft)}
+.f .sublabel{font-size:10.5px; color:var(--muted)}
+details.custinfo{margin-top:10px}
+details.custinfo summary{font-size:12px; color:var(--muted); cursor:pointer}
+details.custinfo .grid{margin-top:9px}
+
+/* outputs */
+.outhead{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.outhead h3{
+  font-size:11px; font-weight:650; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); margin:0;
+}
+.outhead .spacer{flex:1}
+.copy{
+  background:var(--surface2); border:1px solid var(--line2); border-radius:6px;
+  padding:4px 10px; font-size:12px; font-weight:600;
+}
+.copy:hover{border-color:var(--accent); color:var(--accent)}
+.copy.done{background:var(--green-bg); color:var(--green); border-color:var(--green-line)}
+textarea.msg{
+  width:100%; min-height:220px; resize:vertical; padding:10px; border-radius:var(--r);
+  border:1px solid var(--line2); background:var(--surface2);
+  font-family:var(--mono); font-size:12.5px; line-height:1.5;
+}
+textarea.notes{
+  width:100%; min-height:52px; resize:vertical; padding:8px 10px; border-radius:var(--r);
+  border:1px solid var(--line2); background:var(--surface2); font-family:var(--mono); font-size:12.5px;
+}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+.chip{
+  border:1px dashed var(--line2); background:transparent; border-radius:999px;
+  padding:3px 9px; font-size:11.5px; color:var(--muted); font-family:var(--mono);
+}
+.chip:hover{border-style:solid; border-color:var(--accent); color:var(--accent)}
+
+/* tsv preview */
+.tsvwrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r)}
+table.tsv{border-collapse:collapse; font-size:12px; width:100%}
+table.tsv th{
+  font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted);
+  font-weight:600; text-align:left; padding:5px 9px; background:var(--surface2);
+  border-bottom:1px solid var(--line); white-space:nowrap;
+}
+table.tsv td{
+  padding:6px 9px; font-family:var(--mono); vertical-align:top;
+  border-right:1px solid var(--line); white-space:nowrap;
+}
+/* 只让长文本的三列换行，短列保持一行，别把 Lin 断成两行 */
+table.tsv td:nth-child(8),
+table.tsv td:nth-child(9),
+table.tsv td:nth-child(10){white-space:normal; min-width:130px}
+table.tsv td:last-child{border-right:0}
+table.tsv td.pen-red{background:var(--red-bg); color:var(--red); font-weight:600}
+table.tsv td.pen-green{background:var(--green-bg); color:var(--green); font-weight:600}
+table.tsv td.pen-blank{background:var(--gray-bg); color:var(--muted)}
+table.tsv td.name{background:var(--accent-soft); color:var(--accent); font-weight:600}
+table.tsv td.empty::after{content:"—"; color:var(--muted)}
+
+/* ---------- bottom bar ---------- */
+.bottombar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  display:flex; align-items:center; gap:12px; padding:10px 18px;
+  background:var(--surface); border-top:1px solid var(--line);
+}
+.bottombar .count{font-size:12.5px; color:var(--muted)}
+.bottombar .spacer{flex:1}
+.empty{
+  padding:44px 20px; text-align:center; color:var(--muted); font-size:13px;
+  border:1px dashed var(--line2); border-radius:12px; background:var(--surface);
+}
+.toast{
+  position:fixed; left:50%; bottom:70px; transform:translateX(-50%) translateY(8px);
+  background:var(--text); color:var(--bg); padding:8px 16px; border-radius:999px;
+  font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s;
+  z-index:40;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Incident 处理台</h1>
+    <span class="sub">Ottawa Warehouse · 粘贴 → 消息 · 表格行 · Notes</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="ghost" id="btnRoster">名单</button>
+  <button class="ghost" id="btnTheme">深/浅</button>
+</div>
+
+<div class="layout">
+  <div class="pane">
+    <div class="panel">
+      <h2>① 粘贴 Ctrl+A 的文字</h2>
+      <textarea id="raw" placeholder="在官网 incident 列表页 / Edit Order 页面按 Ctrl+A、Ctrl+C，然后粘到这里。可以一次粘多个单。"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btnParse">解析</button>
+        <button class="ghost" id="btnClear">清空全部</button>
+        <span class="hint" id="parseHint"></span>
+      </div>
+    </div>
+    <div class="panel" id="listPanel" hidden>
+      <h2>Incident 列表（<span id="listCount">0</span>）</h2>
+      <div id="listTable"></div>
+    </div>
+    <div class="panel" id="rosterPanel" hidden>
+      <h2>更新中介名单</h2>
+      <p class="hint" style="margin:0 0 8px">每行一个：<code>司机ID</code> + 空格/逗号/Tab + <code>中介名</code>。中介名留空 = 个人司机。</p>
+      <textarea id="rosterInput" style="width:100%;height:120px;padding:8px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);font-family:var(--mono);font-size:12px" placeholder="5002460&#9;Parfait&#10;19999"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="btnRosterSave">保存</button>
+        <span class="hint" id="rosterHint"></span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div id="cards"></div>
+    <div class="empty" id="emptyState">还没有单子。把 Edit Order 页面 Ctrl+A 的文字粘到左边，点「解析」。</div>
+  </div>
+</div>
+
+<div class="bottombar">
+  <span class="count" id="footCount">0 单</span>
+  <div class="spacer"></div>
+  <button class="ghost" id="btnCopyMsgAll">复制全部消息</button>
+  <button class="primary" id="btnCopyAll">复制全部表格行</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   中介名单：来自「渥太华问题订单管理.xlsx」(2026-08-13) + 「YOW dispatch schedule」
+   格式 中介:司机ID|司机ID|... ; 末尾 #solo 段为个人/仓库司机（中介列留空）
+   ============================================================ */
+var ROSTER_RAW = "Alain:333|18940|18941|18942|18943|18944|18945|19015|19016|19017|19841|19993|19994|19995|19996|19997|19998|31703|32097|32108|32110|32111|32140|5001743|5003303|5003308;Alawi:13800|15164|15165|15166|15167|15168|15169|15170|15171|15172|15173;Ammar:13456|31554|31802|31902|32059|32061|32065|32171|32190|32238|32328|32331|32348|32428|32450|32623|32636|5000225|5000227|5000807|5000808|5001400|5001427|5001468|5001788|5001887;Anton:31702|31705|31737|31792|31799|31804|31849|31850|31854|31856|32324;Bassi:31616|31626;Christ:2361|19749|19883|19893|20004|20026|20049|20092|20135|20255|20256|23604|23606|23613|25155|25287|25290|26356|30907|30913;Kaneza:2227|2528|2633|2778|2900|3262|3817|3917|3974|3975|4111|4186|7409|7411|8225|12243|12568|12569|12588|12589|18923|18924|18925|18926|19523|19524|19525|19526|19527|20059|20060|20061|20063|31506|125689;Massi:386|30289|31988|31989|31990|32088|32089|33990;Parfait:27421|27852|27862|27891|27905|27920|27959|27981|28677|28704|28708|28715|29155|29418|29421|29804|29815|29959|5002460|5002471|5002474|5002575|5002588;#solo:0|1|2|3|4|5|6|7|8|9|10|12|13|14|15|16|17|18|20|22|24|25|27|29|30|32|40|47|49|50|51|58|60|61|62|63|65|70|72|77|80|82|83|85|90|95|98|100|102|105|107|115|118|120|125|126|132|138|139|140|146|152|168|170|174|177|178|180|182|186|189|191|192|200|202|205|207|213|214|217|218|220|221|223|225|228|231|232|234|239|248|249|253|257|264|267|270|273|276|286|287|289|294|298|303|305|308|311|313|317|322|327|329|342|347|348|349|351|357|366|369|370|371|373|389|390|394|398|400|405|412|417|418|420|422|424|427|430|440|441|446|448|453|455|459|467|468|470|471|473|480|482|485|492|496|510|511|515|521|522|540|547|558|559|562|572|573|580|609|611|617|620|627|659|667|687|688|696|714|729|736|751|769|774|785|789|809|828|835|862|922|927|941|996|1004|1015|1048|1084|1191|1204|1223|1239|1388|1398|2218|2242|2566|3261|3438|3978|4030|4440|4574|5267|5310|5528|5561|5750|5847|6074|6087|6091|6637|6725|6752|7208|8221|8222|8223|8226|8228|8230|8231|8235|10296|12412|12572|12697|12699|13452|13454|13951|13952|13955|14214|15400|15404|16864|16867|18843|18844|18950|19242|19492|19705|19810|19944|19999|20285|21072|26133|27727|28684|29935|31552|31646|31800|31803|31806|31851|31852|31853|32001|32124|33001|33017|33092|33093|99099|5001462|5001885|2025061299995387";
+var BROKERS = ["Kaneza","Alain","Christ","Parfait","Alawi","Ammar","Anton","Massi","Bassi"];
+
+var ROSTER = (function(){
+  var map = {};
+  ROSTER_RAW.split(";").forEach(function(seg){
+    if(!seg) return;
+    var i = seg.indexOf(":");
+    var name = seg.slice(0,i), ids = seg.slice(i+1);
+    var broker = (name === "#solo") ? "" : name;
+    ids.split("|").forEach(function(id){ if(id) map[id] = broker; });
+  });
+  return map;
+})();
+
+var PENALTIES = [
+  {v:"", label:"（留空）待司机修复，5 天后再定", cls:"pen-blank"},
+  {v:"15-Invalid POD (Proof of Delivery)", label:"15-Invalid POD (Proof of Delivery)", cls:"pen-red"},
+  {v:"12-Delivered to the wrong address", label:"12-Delivered to the wrong address", cls:"pen-red"},
+  {v:"Fixed/no penality", label:"Fixed/no penality", cls:"pen-green"}
+];
+var P15 = "15-Invalid POD (Proof of Delivery)";
+var P12 = "12-Delivered to the wrong address";
+var PFIX = "Fixed/no penality";
+
+var NOTE_CHIPS = ["//lost","//已和司机沟通","//delivered, message proof uploaded",
+  "//delivered. POD updated","//delivered. POD can not be updated","//fixed, can not update POD",
+  "//已归仓","//已提醒司机","//已提醒司机需要拍到交接的照片","//如果之后有投诉没送到就记丢",
+  "//这单已经记丢过一次了，这个incident里面不记丢"];
+
+/* ---------- 场景模板 ---------- */
+var TPL = [
+  /* ===== Shein：直接记丢，消息里不含客户信息 ===== */
+  {id:"shein_mailbox_room", shein:true, label:"Shein · 邮箱房", title:"Shein mailbox room",
+   body:"This parcel is lost, it is a shein package. This parcel is delivered to mailbox room.",
+   tail:"invalid pod it misses unit number", penalty:P15, reason:"Invalid POD"},
+  {id:"shein_mailbox", shein:true, label:"Shein · 放邮箱", title:"Shein invalid POD Mailbox",
+   body:"This parcel is lost, it is a shein package. This parcel is delivered to mailbox",
+   tail:"", penalty:P15, reason:"Invalid POD"},
+  {id:"shein_corner", shein:true, label:"Shein · 随意角落", title:"Shein invalid POD",
+   body:"This parcel is lost, it is a shein package. This parcel is delivered to a random corner",
+   tail:"", penalty:P15, reason:"Invalid POD"},
+  {id:"shein_wrong_unit", shein:true, label:"Shein · 送错 unit", title:"Shein invalid POD",
+   body:"This parcel is lost, it is a shein package. The POD is showing (unit {{podUnit}}), the correct address is (unit {{correctUnit}})",
+   fields:[{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"},{k:"correctUnit",label:"正确的 unit"}],
+   tail:"", penalty:P15, reason:"Invalid POD"},
+
+  /* ===== 非 Shein：要司机修复，带客户信息 ===== */
+  {id:"wrong_address", label:"送错地址", title:"Wrong Address",
+   body:"The correct address is (unit {{correctUnit}}), The POD is showing (unit {{podUnit}}).This parcel is delivered to the wrong address. Cx is complaining not able to find it. Please try to fix it.",
+   fields:[{k:"correctUnit",label:"正确的 unit"},{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"}],
+   penalty:P12, reason:"Wrong address"},
+  {id:"mailbox_room_fix", label:"邮箱房 · 让中介修复", title:"Mailbox Room",
+   body:"This parcel is delivered to mailbox room. Cx is complaining not able to find it. Please try to fix it. Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"mailbox_room_proof", label:"邮箱房 · 要短信证明", title:"Mailbox Room",
+   body:"This parcel is delivered to mailbox room. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"corner_proof", label:"随意角落 · 要短信证明", title:"Invalid POD",
+   body:"This parcel is delivered to a random corner. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"no_dropping", label:"没拍到 unit / 放置点", title:"No dropping location",
+   body:"The POD does not include unit number nor dropping location, please get a message proof from cx, thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"sign_proof", label:"签名没拍到手 · 要短信证明", title:"Signiture with no person",
+   body:"POD is invalid since the POD does not include person's hand. Since there is a signature, I would assume the parcel was delivered. Can you please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered? Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"sign_driver", label:"签名没拍到手 · 提醒司机", title:"Signiture with no person",
+   body:"POD is invalid since the POD does not include person's hand. Please make sure that you take a picture of the person's hand when you need a signature from cx next time. Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"sign_dsp", label:"签名没拍到手 · 提醒中介", title:"Signiture with no person",
+   body:"POD is invalid since the POD does not include person's hand. Please make sure that your drivers take a picture of the person's hand when they need a signature from cx next time. Thanks",
+   penalty:"", reason:"Invalid POD"},
+  {id:"wrong_gps", label:"GPS 漂移（POD 本身没问题）", title:"Wrong GPS",
+   body:"The POD is correct but the delivered GPS location is off. Please update this parcel, thanks.",
+   penalty:PFIX, reason:"Wrong GPS,司机不赔，已让司机去修复"},
+  {id:"damaged", label:"破损 / 漏液", title:"Damaged",
+   body:"This parcel is reported leaked, please note if your driver find any parcel that is leaked or damaged, please ask the driver to return it to office and let office check before delivering in the morning. For this parcel, we will not charge your driver, but please notify your drivers about damaged and leaked parcels, thanks",
+   penalty:PFIX, reason:"Damaged"},
+  {id:"custom", label:"自定义", title:"",
+   body:"{{text}}",
+   fields:[{k:"text",label:"自己写正文",ph:"随便写"}], titleField:true,
+   penalty:"", reason:""}
+];
+function tplById(id){ for(var i=0;i<TPL.length;i++){ if(TPL[i].id===id) return TPL[i]; } return TPL[0]; }
+
+/* ============================================================
+   解析
+   ============================================================ */
+function norm(t){
+  return String(t||"").replace(/\r\n?/g,"\n")
+    .replace(/[‐‑‒–]/g,"-")   // 非断行连字符等
+    .replace(/[ ​]/g," ");
+}
+function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+
+// "Label: value" 且 Label 在行首
+function lineVal(txt,label){
+  var m = txt.match(new RegExp("^[ \\t]*"+esc(label)+"[ \\t]*[:：][ \\t]*(.*)$","m"));
+  return m ? m[1].trim() : "";
+}
+// Other Info 的两列表格： "Label\tvalue" 或 "Label\nvalue"
+function tableVal(txt,label){
+  var m = txt.match(new RegExp("^[ \\t]*"+esc(label)+"[ \\t]*(?:\\t|\\n)[ \\t]*([^\\t\\n]*)","m"));
+  return m ? m[1].trim() : "";
+}
+function isDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s); }
+
+/* ---- incident 列表页 ---- */
+function parseList(txt){
+  var head = txt.split(/\nEdit Order\n/)[0];
+  if(!/Incident Type/.test(head) && !/^(Claim|Complaint)$/m.test(head)) return [];
+  var lines = head.split("\n").map(function(s){return s.trim();});
+  var out = [], cur = null;
+  for(var i=0;i<lines.length;i++){
+    var l = lines[i];
+    if(l==="Claim" || l==="Complaint"){
+      if(cur) out.push(cur);
+      cur = {level:l, lines:[]};
+    } else if(cur){
+      if(/^\d+-\d+ of \d+$/.test(l)) { out.push(cur); cur=null; continue; }
+      if(l) cur.lines.push(l);
+    }
+  }
+  if(cur) out.push(cur);
+  return out.map(function(r){
+    var L = r.lines, dates = [], driverId = "", shein = "", path = "", type = "", notes = "";
+    for(var i=0;i<L.length;i++){
+      var v = L[i];
+      if(isDate(v)) dates.push(v);
+      else if(/^(Yes|No)$/i.test(v) && !shein) shein = v;
+      else if(/^\d{3,8}$/.test(v) && !driverId) driverId = v;
+      else if(/^[A-Z][A-Z_]{3,}$/.test(v) && !path) path = v;
+      else if(/^POD Check/i.test(v) && !type){ type = v; notes = L[i+1] || ""; }
+    }
+    if(!type){
+      for(var j=0;j<L.length;j++){ if(/[一-龥]/.test(L[j])){ notes = L[j]; break; } }
+    }
+    return {level:r.level, recordDate:dates[0]||"", occurrenceDate:dates[1]||dates[0]||"",
+            shein:/^yes$/i.test(shein), incidentType:type, notes:notes, driverId:driverId, path:path};
+  }).filter(function(r){ return r.driverId || r.recordDate; });
+}
+
+/* ---- Edit Order 详情 ---- */
+function parseOrders(txt){
+  var parts = txt.split(/(?=^Edit Order$)/m);
+  var seen = {}, out = [];
+  parts.forEach(function(b){
+    if(!/Parcel ID/.test(b)) return;
+    var o = parseOrderBlock(b);
+    if(!o.parcelId || seen[o.parcelId]) return;
+    seen[o.parcelId] = 1;
+    out.push(o);
+  });
+  return out;
+}
+function parseOrderBlock(b){
+  var o = {};
+  o.parcelId = lineVal(b,"Parcel ID");
+  var impo = b.match(/Important Info\(([^)]*)\)/);
+  o.partner = lineVal(b,"Partner") || (impo ? impo[1] : "");
+  o.shein = /shein/i.test(impo ? impo[1] : "") || /shein/i.test(lineVal(b,"Partner"));
+
+  o.consignee = lineVal(b,"Consignee");
+  o.phone = lineVal(b,"Phone");
+  o.ext = lineVal(b,"Extension Num") || "N/A";
+  o.email = lineVal(b,"email") || "N/A";
+  o.address = lineVal(b,"Address");
+  o.unit = lineVal(b,"Unit") || "N/A";
+  o.postal = lineVal(b,"Postal Code");
+  o.buzz = lineVal(b,"Buzz Code");
+
+  var drv = tableVal(b,"Driver ID");
+  var dm = drv.match(/^(\d+)\s*-\s*(.+)$/);
+  o.driverId = dm ? dm[1] : (drv.match(/\d+/)||[""])[0];
+  o.driverName = dm ? dm[2].trim() : "";
+
+  var memo = tableVal(b,"Driver Memo");
+  o.driverMemo = memo;
+  var pn = memo.match(/-\s*(\d{1,4})\s*[】\]\)]?\s*$/) || memo.match(/-\s*(\d{1,4})\s*[】\]\)]/);
+  o.parcelNo = pn ? pn[1] : "";
+
+  o.warehouse = tableVal(b,"Warehouse");
+
+  // 状态 & 妥投日期：时间线最后一条
+  var ev = null, re = /^(\d{3}):\s*([A-Z_]+)\s*$/gm, m;
+  while((m = re.exec(b))) ev = {code:m[1], name:m[2], idx:m.index};
+  o.status = ev ? ev.name : "";
+  var ship = tableVal(b,"Shipping Time");
+  var d = ship.match(/(\d{4}-\d{2}-\d{2})/);
+  if(!d && ev){
+    var after = b.slice(ev.idx).match(/(\d{4}-\d{2}-\d{2})/);
+    d = after;
+  }
+  o.deliveryDate = d ? d[1] : "";
+  return o;
+}
+
+/* ============================================================
+   状态
+   ============================================================ */
+var LS_KEY = "incidentTool.v1";
+var state = {date: todayStr(), cards: [], list: []};
+
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+function pad(n){ return (n<10?"0":"")+n; }
+function plusDays(dateStr,n){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr||"");
+  if(!m) return "";
+  var d = new Date(+m[1], +m[2]-1, +m[3]);
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  try{
+    var s = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+    if(s && s.date === todayStr()){ state = s; }
+  }catch(e){}
+  try{
+    var ov = JSON.parse(localStorage.getItem(LS_KEY+".roster")||"null");
+    if(ov) for(var k in ov) ROSTER[k] = ov[k];
+  }catch(e){}
+}
+function rememberBroker(driverId, broker){
+  if(!driverId) return;
+  ROSTER[driverId] = broker;
+  var ov = {};
+  try{ ov = JSON.parse(localStorage.getItem(LS_KEY+".roster")||"{}"); }catch(e){}
+  ov[driverId] = broker;
+  try{ localStorage.setItem(LS_KEY+".roster", JSON.stringify(ov)); }catch(e){}
+}
+
+/* 把解析结果变成卡片 */
+function makeCard(o, list){
+  // 列表页复制出来没有单号，只能靠 Driver ID 对；同一司机多条时全列出来，让你自己对号
+  var cand = list.filter(function(r){ return r.driverId && r.driverId === o.driverId; });
+  var exact = cand.filter(function(r){ return r.occurrenceDate && r.occurrenceDate === o.deliveryDate; });
+  var match = null, ambiguous = false;
+  if(exact.length === 1) match = exact[0];
+  else if(cand.length === 1) match = cand[0];
+  else if(cand.length > 1){
+    match = {
+      notes: cand.map(function(r){ return r.notes; }).filter(Boolean).join(" / "),
+      incidentType: cand[0].incidentType
+    };
+    ambiguous = true;
+  }
+  var known = Object.prototype.hasOwnProperty.call(ROSTER, o.driverId);
+  var streetNo = (o.address||"").match(/\d+/);
+  var tpl = o.shein ? "shein_mailbox_room" : "wrong_address";
+  var t = tplById(tpl);
+  var c = {
+    id: o.parcelId,
+    parcelId:o.parcelId, status:o.status || "DELIVERED", deliveryDate:o.deliveryDate,
+    driverId:o.driverId, driverName:o.driverName, parcelNo:o.parcelNo,
+    broker: known ? ROSTER[o.driverId] : "", brokerKnown: known,
+    shein:o.shein, partner:o.partner, warehouse:o.warehouse,
+    consignee:o.consignee, phone:o.phone, ext:o.ext, email:o.email,
+    address:o.address, unit:o.unit, postal:o.postal,
+    issueDate: todayStr(),
+    tplId:tpl, inputs:{}, tail: t.tail || "", customTitle:"",
+    penalty:t.penalty, reason:t.reason,
+    notes: o.shein ? "//lost" : "//已和司机沟通",
+    listNote: match ? (match.notes||"") : "",
+    listType: match ? (match.incidentType||"") : "",
+    listAmbiguous: ambiguous,
+    msgEdited:null
+  };
+  c.inputs.correctUnit = (o.unit && o.unit !== "N/A") ? o.unit : (streetNo ? streetNo[0] : "");
+  c.inputs.podUnit = "";
+  return c;
+}
+
+/* ============================================================
+   生成三个输出
+   ============================================================ */
+function renderBody(c){
+  var t = tplById(c.tplId);
+  var body = t.body.replace(/\{\{(\w+)\}\}/g, function(_,k){
+    return c.inputs[k] || "";
+  });
+  if(t.tail !== undefined && c.tail) body = body + " " + c.tail;
+  return body;
+}
+function msgTitle(c){
+  var t = tplById(c.tplId);
+  return t.titleField ? (c.customTitle||"") : t.title;
+}
+function buildMessage(c){
+  var head = c.parcelId + "\n" + c.status + "\n\n" + c.deliveryDate + " \n" + c.driverId + "-" + c.parcelNo;
+  var title = msgTitle(c), body = renderBody(c);
+  var tailBlock = (title ? title + "\n" : "") + body;
+  if(c.shein){
+    return head + "\n\n" + tailBlock;
+  }
+  return head + "\n" +
+    "Contact Info\n" +
+    "Consignee: " + c.consignee + "\n\n" +
+    "Phone: " + c.phone + "\n\n" +
+    "Extension Num: " + c.ext + "\n\n" +
+    "email: " + c.email + "\n\n" +
+    "Destination Info\n" +
+    "Address: " + c.address + "\n\n\n" +
+    "Unit: " + c.unit + "\n\n" +
+    "Postal Code: " + c.postal + "\n" +
+    tailBlock;
+}
+function rowCells(c){
+  return [c.issueDate, c.deliveryDate, "Lin", c.broker, c.driverId,
+          c.parcelNo, c.parcelId, c.address, c.penalty, c.reason];
+}
+function buildRow(c){ return rowCells(c).join("\t"); }
+
+/* ============================================================
+   渲染
+   ============================================================ */
+var ROW_HEAD = ["今天日期","Delivery date","名字","中介","Driver ID","Parcel#","Parcel ID","地址","是否记赔","原因"];
+
+function el(tag, cls, txt){
+  var e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(txt !== undefined) e.textContent = txt;
+  return e;
+}
+function field(label, key, value, opts){
+  opts = opts || {};
+  var wrap = el("div","f");
+  var lab = el("label", null, label);
+  wrap.appendChild(lab);
+  var input;
+  if(opts.list){
+    input = el("input");
+    input.setAttribute("list", opts.list);
+  } else {
+    input = el("input");
+  }
+  input.value = value || "";
+  input.dataset.k = key;
+  if(opts.mono) input.className = "mono";
+  if(opts.placeholder) input.placeholder = opts.placeholder;
+  if(opts.missing) input.classList.add("missing");
+  wrap.appendChild(input);
+  if(opts.sub){ wrap.appendChild(el("div","sublabel",opts.sub)); }
+  return wrap;
+}
+
+function renderAll(){
+  var host = document.getElementById("cards");
+  host.textContent = "";
+  state.cards.forEach(function(c){ host.appendChild(renderCard(c)); });
+  document.getElementById("emptyState").hidden = state.cards.length > 0;
+  document.getElementById("footCount").textContent = state.cards.length + " 单";
+  renderList();
+}
+function renderList(){
+  var panel = document.getElementById("listPanel");
+  if(!state.list.length){ panel.hidden = true; return; }
+  panel.hidden = false;
+  document.getElementById("listCount").textContent = state.list.length;
+  var t = document.getElementById("listTable");
+  t.textContent = "";
+  var have = {};
+  state.cards.forEach(function(c){ have[c.driverId] = 1; });
+  state.list.forEach(function(r){
+    var row = el("div","lrow" + (have[r.driverId] ? " matched" : ""));
+    var meta = el("div","lmeta");
+    meta.appendChild(el("span","lvl",r.level));
+    meta.appendChild(el("span","id",r.driverId));
+    meta.appendChild(el("span","id",r.occurrenceDate));
+    if(r.shein) meta.appendChild(el("span","sh","SHEIN"));
+    if(have[r.driverId]) meta.appendChild(el("span",null,"· 已在右边"));
+    row.appendChild(meta);
+    if(r.notes) row.appendChild(el("div","lnote",r.notes));
+    t.appendChild(row);
+  });
+}
+
+function renderCard(c){
+  var card = el("div","card" + (c.shein ? " shein" : ""));
+  card.dataset.id = c.id;
+
+  /* --- 头 --- */
+  var head = el("div","chead");
+  head.appendChild(el("span","pid",c.parcelId));
+  head.appendChild(el("span","pill" + (c.status==="DELIVERED" ? "" : " accent"), c.status||"—"));
+  head.appendChild(el("span","pill" + (c.shein ? " red" : ""), c.shein ? "SHEIN · 直接记丢" : (c.partner||"非 Shein")));
+  head.appendChild(el("div","spacer"));
+  var del = el("button","ghost","移除");
+  del.dataset.act = "del";
+  head.appendChild(del);
+  card.appendChild(head);
+
+  /* --- 提示 --- */
+  if(c.shein){
+    var w = el("div","warn");
+    w.appendChild(el("span",null,"⚠"));
+    w.appendChild(el("span",null,"Shein 直接记丢，记丢就不能再修复。消息用简洁版，不含收件人、电话、邮箱、地址——别让司机去找客户「修复」。"));
+    card.appendChild(w);
+  }
+  if(c.status && c.status !== "DELIVERED"){
+    var w2 = el("div","warn");
+    w2.appendChild(el("span",null,"⚠"));
+    w2.appendChild(el("span",null,"这单状态是 " + c.status + "，不是 DELIVERED，下面的模板是给已妥投的单用的。"));
+    card.appendChild(w2);
+  }
+  if(c.listNote){
+    var n = el("div","note");
+    n.appendChild(el("b",null,"客服记的："));
+    n.appendChild(document.createTextNode(c.listNote + (c.listType ? "（" + c.listType + "）" : "")));
+    if(c.listAmbiguous){
+      n.appendChild(el("b",null," ⚠ 这个司机今天有多条投诉，列表里没有单号，自己对一下是哪条"));
+    }
+    card.appendChild(n);
+  }
+
+  /* --- 字段 --- */
+  var s1 = el("div","sec");
+  s1.appendChild(el("h3",null,"字段（解析错了直接改）"));
+  var g1 = el("div","grid");
+  g1.appendChild(field("Delivery date","deliveryDate",c.deliveryDate,{mono:true}));
+  g1.appendChild(field("Driver ID","driverId",c.driverId,{mono:true}));
+  g1.appendChild(field("Parcel #（站点号）","parcelNo",c.parcelNo,{mono:true, missing:!c.parcelNo,
+    placeholder:"Driver Memo 里没有，手填"}));
+  g1.appendChild(field("中介（个人司机留空）","broker",c.broker,{list:"brokerList",
+    sub: c.brokerKnown ? (c.broker ? "名单：" + c.broker : "名单：个人/仓库司机，留空") : "名单里没这个司机，填一次就记住"}));
+  g1.appendChild(field("地址（进表格第 8 列）","address",c.address));
+  g1.appendChild(field("司机","driverName",c.driverName,{sub:c.warehouse||""}));
+  s1.appendChild(g1);
+
+  var det = el("details","custinfo");
+  var sum = el("summary",null, c.shein ? "客户信息（Shein 简洁版不会写进消息）" : "客户信息（会写进消息）");
+  if(!c.shein) det.open = true;
+  det.appendChild(sum);
+  var g2 = el("div","grid");
+  g2.appendChild(field("Consignee","consignee",c.consignee));
+  g2.appendChild(field("Phone","phone",c.phone,{mono:true}));
+  g2.appendChild(field("Extension Num","ext",c.ext));
+  g2.appendChild(field("email","email",c.email));
+  g2.appendChild(field("Unit","unit",c.unit));
+  g2.appendChild(field("Postal Code","postal",c.postal,{mono:true}));
+  det.appendChild(g2);
+  s1.appendChild(det);
+  card.appendChild(s1);
+
+  /* --- 场景 --- */
+  var s2 = el("div","sec");
+  s2.appendChild(el("h3",null,"场景"));
+  var g3 = el("div","grid");
+
+  var fw = el("div","f");
+  fw.appendChild(el("label",null,"模板"));
+  var sel = el("select"); sel.dataset.k = "tplId";
+  TPL.forEach(function(t){
+    if(c.shein !== !!t.shein && t.id !== "custom") return;
+    var op = el("option",null,t.label); op.value = t.id;
+    if(t.id === c.tplId) op.selected = true;
+    sel.appendChild(op);
+  });
+  fw.appendChild(sel);
+  g3.appendChild(fw);
+
+  var t = tplById(c.tplId);
+  if(t.titleField){
+    g3.appendChild(field("消息标题（可留空）","customTitle",c.customTitle));
+  }
+  (t.fields||[]).forEach(function(f){
+    g3.appendChild(field(f.label,"in_"+f.k,c.inputs[f.k],{placeholder:f.ph||"", missing:!c.inputs[f.k]}));
+  });
+  if(t.tail !== undefined){
+    g3.appendChild(field("补充说明（接在正文后面）","tail",c.tail,{placeholder:"可留空"}));
+  }
+
+  var fp = el("div","f");
+  fp.appendChild(el("label",null,"是否记赔（表格第 9 列）"));
+  var psel = el("select"); psel.dataset.k = "penalty";
+  PENALTIES.forEach(function(p){
+    var op = el("option",null,p.label); op.value = p.v;
+    if(p.v === c.penalty) op.selected = true;
+    psel.appendChild(op);
+  });
+  fp.appendChild(psel);
+  if(!c.penalty && c.deliveryDate){
+    fp.appendChild(el("div","sublabel","留空 → " + plusDays(c.deliveryDate,5) + " 复查，没修好就记赔"));
+  }
+  g3.appendChild(fp);
+  g3.appendChild(field("原因（第 10 列）","reason",c.reason));
+  s2.appendChild(g3);
+  card.appendChild(s2);
+
+  /* --- 输出 1：消息 --- */
+  var s3 = el("div","sec");
+  var oh = el("div","outhead");
+  oh.appendChild(el("h3",null,"① 发给中介的消息"));
+  oh.appendChild(el("div","spacer"));
+  if(c.msgEdited !== null){
+    var rb = el("button","copy","重新生成"); rb.dataset.act = "regen";
+    oh.appendChild(rb);
+  }
+  var cb = el("button","copy","复制"); cb.dataset.act = "copyMsg";
+  oh.appendChild(cb);
+  s3.appendChild(oh);
+  var ta = el("textarea","msg");
+  ta.dataset.k = "msg";
+  ta.value = c.msgEdited !== null ? c.msgEdited : buildMessage(c);
+  ta.spellcheck = false;
+  s3.appendChild(ta);
+  card.appendChild(s3);
+
+  /* --- 输出 2：表格行 --- */
+  var s4 = el("div","sec");
+  var oh2 = el("div","outhead");
+  oh2.appendChild(el("h3",null,"② 表格行（10 列）"));
+  oh2.appendChild(el("div","spacer"));
+  var cb2 = el("button","copy","复制这一行"); cb2.dataset.act = "copyRow";
+  oh2.appendChild(cb2);
+  s4.appendChild(oh2);
+  s4.appendChild(rowTable(c));
+  card.appendChild(s4);
+
+  /* --- 输出 3：官网 Notes --- */
+  var s5 = el("div","sec");
+  var oh3 = el("div","outhead");
+  oh3.appendChild(el("h3",null,"③ 官网 incident_form 的 Notes"));
+  oh3.appendChild(el("div","spacer"));
+  var cb3 = el("button","copy","复制"); cb3.dataset.act = "copyNotes";
+  oh3.appendChild(cb3);
+  s5.appendChild(oh3);
+  var nta = el("textarea","notes");
+  nta.dataset.k = "notes"; nta.value = c.notes; nta.spellcheck = false;
+  s5.appendChild(nta);
+  var chips = el("div","chips");
+  NOTE_CHIPS.forEach(function(x){
+    var b = el("button","chip",x); b.dataset.act = "chip"; b.dataset.val = x;
+    chips.appendChild(b);
+  });
+  s5.appendChild(chips);
+  card.appendChild(s5);
+
+  return card;
+}
+
+function rowTable(c){
+  var wrap = el("div","tsvwrap");
+  var t = el("table","tsv");
+  var thead = el("thead"), tr = el("tr");
+  ROW_HEAD.forEach(function(h){ tr.appendChild(el("th",null,h)); });
+  thead.appendChild(tr); t.appendChild(thead);
+  var tb = el("tbody"), tr2 = el("tr");
+  var cells = rowCells(c);
+  cells.forEach(function(v,i){
+    var td = el("td",null,v);
+    if(i === 2) td.className = "name";
+    if(i === 8){
+      var p = PENALTIES.filter(function(x){ return x.v === v; })[0];
+      td.className = p ? p.cls : "pen-blank";
+    }
+    if(!v && i !== 8) td.className = (td.className ? td.className+" " : "") + "empty";
+    tr2.appendChild(td);
+  });
+  tb.appendChild(tr2); t.appendChild(tb);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+/* 只刷新输出，不重建卡片（保住输入焦点） */
+function refresh(cardEl, c){
+  var ta = cardEl.querySelector("textarea.msg");
+  if(c.msgEdited === null && ta) ta.value = buildMessage(c);
+  var old = cardEl.querySelectorAll(".sec")[3].querySelector(".tsvwrap");
+  old.replaceWith(rowTable(c));
+}
+
+/* ============================================================
+   事件
+   ============================================================ */
+function cardOf(node){
+  var el2 = node.closest(".card");
+  if(!el2) return [null,null];
+  var id = el2.dataset.id;
+  for(var i=0;i<state.cards.length;i++){ if(state.cards[i].id === id) return [state.cards[i], el2]; }
+  return [null,null];
+}
+
+document.getElementById("cards").addEventListener("input", function(e){
+  var k = e.target.dataset.k;
+  if(!k) return;
+  var pair = cardOf(e.target), c = pair[0], cardEl = pair[1];
+  if(!c) return;
+  if(k === "msg"){ c.msgEdited = e.target.value; save(); return; }
+  if(k.indexOf("in_") === 0){ c.inputs[k.slice(3)] = e.target.value; }
+  else { c[k] = e.target.value; }
+  if(k === "broker") rememberBroker(c.driverId, e.target.value.trim());
+  refresh(cardEl, c);
+  save();
+});
+
+document.getElementById("cards").addEventListener("change", function(e){
+  var k = e.target.dataset.k;
+  if(k !== "tplId" && k !== "penalty") return;
+  var pair = cardOf(e.target), c = pair[0], cardEl = pair[1];
+  if(!c) return;
+  if(k === "penalty"){ c.penalty = e.target.value; refresh(cardEl,c); save(); return; }
+  c.tplId = e.target.value;
+  var t = tplById(c.tplId);
+  c.penalty = t.penalty; c.reason = t.reason;
+  c.tail = t.tail || "";
+  c.msgEdited = null;
+  cardEl.replaceWith(renderCard(c));
+  save();
+});
+
+document.getElementById("cards").addEventListener("click", function(e){
+  var btn = e.target.closest("[data-act]");
+  if(!btn) return;
+  var pair = cardOf(btn), c = pair[0], cardEl = pair[1];
+  if(!c) return;
+  var act = btn.dataset.act;
+  if(act === "copyMsg"){
+    copy(cardEl.querySelector("textarea.msg").value, btn, c.shein ? "Shein 简洁版已复制" : "消息已复制");
+  } else if(act === "copyRow"){
+    copy(buildRow(c), btn, "表格行已复制，去 Sheets 粘贴");
+  } else if(act === "copyNotes"){
+    copy(cardEl.querySelector("textarea.notes").value, btn, "Notes 已复制");
+  } else if(act === "chip"){
+    var nta = cardEl.querySelector("textarea.notes");
+    var v = nta.value.trim();
+    nta.value = v ? (v + btn.dataset.val) : btn.dataset.val;
+    c.notes = nta.value; save();
+  } else if(act === "regen"){
+    c.msgEdited = null;
+    cardEl.replaceWith(renderCard(c));
+    save();
+  } else if(act === "del"){
+    state.cards = state.cards.filter(function(x){ return x.id !== c.id; });
+    renderAll(); save();
+  }
+});
+
+document.getElementById("btnParse").addEventListener("click", function(){
+  var txt = norm(document.getElementById("raw").value);
+  if(!txt.trim()){ toast("先把 Ctrl+A 的文字粘进来"); return; }
+  var list = parseList(txt);
+  var orders = parseOrders(txt);
+  if(list.length) state.list = list;
+  var added = 0, dup = 0;
+  orders.forEach(function(o){
+    if(state.cards.some(function(x){ return x.id === o.parcelId; })){ dup++; return; }
+    state.cards.push(makeCard(o, state.list));
+    added++;
+  });
+  state.date = todayStr();
+  renderAll(); save();
+  var msg = [];
+  if(list.length) msg.push("列表 " + list.length + " 条");
+  msg.push("新增 " + added + " 单");
+  if(dup) msg.push("跳过重复 " + dup);
+  document.getElementById("parseHint").textContent = msg.join(" · ");
+  if(!added && !list.length) toast("没认出 Edit Order 的内容");
+});
+
+document.getElementById("btnClear").addEventListener("click", function(){
+  if(!confirm("清空所有卡片和列表？")) return;
+  state = {date: todayStr(), cards: [], list: []};
+  document.getElementById("raw").value = "";
+  document.getElementById("parseHint").textContent = "";
+  renderAll(); save();
+});
+
+document.getElementById("btnCopyAll").addEventListener("click", function(){
+  if(!state.cards.length){ toast("还没有单子"); return; }
+  copy(state.cards.map(buildRow).join("\n"), this, state.cards.length + " 行已复制");
+});
+document.getElementById("btnCopyMsgAll").addEventListener("click", function(){
+  if(!state.cards.length){ toast("还没有单子"); return; }
+  copy(state.cards.map(function(c){
+    return c.msgEdited !== null ? c.msgEdited : buildMessage(c);
+  }).join("\n\n———\n\n"), this, "全部消息已复制");
+});
+
+document.getElementById("btnRoster").addEventListener("click", function(){
+  var p = document.getElementById("rosterPanel");
+  p.hidden = !p.hidden;
+});
+document.getElementById("btnRosterSave").addEventListener("click", function(){
+  var lines = document.getElementById("rosterInput").value.split("\n");
+  var n = 0;
+  lines.forEach(function(l){
+    var m = l.match(/^\s*(\d{3,8})\s*[,\t ]\s*(.*)$/);
+    if(m){ rememberBroker(m[1], m[2].trim()); n++; return; }
+    var m2 = l.match(/^\s*(\d{3,8})\s*$/);
+    if(m2){ rememberBroker(m2[1], ""); n++; }
+  });
+  document.getElementById("rosterHint").textContent = "更新了 " + n + " 个司机";
+  state.cards.forEach(function(c){
+    if(Object.prototype.hasOwnProperty.call(ROSTER, c.driverId)){
+      c.broker = ROSTER[c.driverId]; c.brokerKnown = true;
+    }
+  });
+  renderAll(); save();
+});
+
+document.getElementById("btnTheme").addEventListener("click", function(){
+  var cur = document.documentElement.getAttribute("data-theme");
+  var next = cur === "dark" ? "light" : (cur === "light" ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", next);
+  try{ localStorage.setItem(LS_KEY+".theme", next); }catch(e){}
+});
+
+/* ---------- 复制 & toast ---------- */
+function copy(text, btn, msg){
+  function done(){
+    if(btn){
+      var old = btn.textContent;
+      btn.textContent = "已复制"; btn.classList.add("done");
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove("done"); }, 1400);
+    }
+    toast(msg || "已复制");
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+  } else fallback(text, done);
+}
+function fallback(text, done){
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }
+  catch(e){ toast("复制失败，手动选中复制吧"); }
+  document.body.removeChild(ta);
+}
+var toastTimer = null;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+}
+
+/* ---------- 启动 ---------- */
+(function init(){
+  var dl = document.createElement("datalist");
+  dl.id = "brokerList";
+  BROKERS.forEach(function(b){ var o = document.createElement("option"); o.value = b; dl.appendChild(o); });
+  document.body.appendChild(dl);
+  try{
+    var th = localStorage.getItem(LS_KEY+".theme");
+    if(th) document.documentElement.setAttribute("data-theme", th);
+  }catch(e){}
+  load();
+  renderAll();
+})();
+</script>
+</body>
+</html>

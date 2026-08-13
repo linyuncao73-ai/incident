@@ -65,6 +65,10 @@ description: UniUni 渥太华仓每日 incident（客服/商家投诉）处理�
 
 ## 第4步：三个输出
 
+> **可以用仓库根目录的 `index.html`（Incident 处理台）**：把 Edit Order 页面 Ctrl+A 的文字粘进去，
+> 自动解析字段并生成 4a 的 WhatsApp 消息、4b 的表格行（10 列 TSV）、4c 的 Notes。
+> Shein 单会自动切成不含客户信息的简洁消息；中介列由内置名单按 Driver ID 自动填。
+
 ### 4a. WhatsApp 消息（桌面客户端，computer-use）
 联系人：按司机名/司机群（用户指定）。消息格式（见 whatsapp消息模版1.png）：
 
