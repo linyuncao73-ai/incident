@@ -754,14 +754,12 @@ function buildRowHtml(c){
     /* 每一格都写死白底黑字；不写的话浏览器兜底复制时会把页面那层米色背景
        一起序列化进 HTML，粘到表格里就是一片黄 */
     var css = "background-color:#FFFFFF;color:#000000;";
-    if(i === 2){
-      var hc = HANDLER_COLORS[v] || ["#EDEDED","#333333"];
-      css = "background-color:" + hc[0] + ";color:" + hc[1] + ";font-weight:bold;";
-    } else if(i === 8){
-      /* 是否记赔这一格：跟表格里一样居中，Arial 12 */
+    /* 名字那一列不填背景色，交给表格自己的下拉 chip 上色 */
+    if(i === 8){
+      /* 是否记赔这一格：跟表格里一样居中、Arial 12、不加粗 */
       var p = PENALTIES.filter(function(x){ return x.v === v; })[0];
       var pc = p && PEN_COLORS[p.cls];
-      if(pc) css = "background-color:" + pc[0] + ";color:" + pc[1] + ";font-weight:bold;";
+      if(pc) css = "background-color:" + pc[0] + ";color:" + pc[1] + ";";
       css += "text-align:center;font-family:Arial,sans-serif;font-size:12pt;";
     }
     return '<td style="border:none;' + css + '">' + escHtml(v) + "</td>";
