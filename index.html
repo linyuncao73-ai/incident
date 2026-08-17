@@ -128,7 +128,8 @@ a{color:var(--accent)}
 }
 .chead .pid{font-family:var(--mono); font-size:14px; font-weight:600; letter-spacing:.01em}
 .chead .spacer{flex:1}
-.cyc{min-width:118px}
+.cyc{min-width:118px; text-decoration:none; white-space:nowrap; display:inline-block}
+.cyc.wide{min-width:0}
 .dots{display:flex; gap:4px; align-items:center; margin-left:-4px}
 .dots i{width:6px; height:6px; border-radius:50%; background:var(--line2)}
 .dots i.on{background:var(--accent)}
@@ -402,12 +403,24 @@ var CYCLE = [
   {label:"③ 复制 Notes", tip:"复制官网 incident_form 的 Notes"}
 ];
 
-/* WhatsApp 群链接：中介名 → 链接；空字符串这一档是个人司机的 Company driver 群 */
+/* WhatsApp 群链接：中介名 → 链接；空字符串这一档是个人司机的 Company driver 群。
+   下面几个是已有的群；Alain 和 Company driver 还没有链接，这两种就只复制、不跳转。
+   在「群链接」面板里填了的，优先用填的。 */
+var TEAM_CHATS = {
+  Christ:  "https://chat.whatsapp.com/D6dTisW7Y9u9uEqWb7icT8?s=cl&p=i&ilr=4",
+  Kaneza:  "https://chat.whatsapp.com/DAlSnTKZxV6GLu9xCAVdla?s=cl&p=i&ilr=4",
+  Alawi:   "https://chat.whatsapp.com/IcVd9F525552sweiMSHUSH?s=cl&p=i&ilr=4",
+  Parfait: "https://chat.whatsapp.com/IxDlMJQwU9GKzluNRRppNi?s=cl&p=i&ilr=4"
+};
 var SOLO_KEY = "__solo__";
 var GROUPS = {};
 function groupLabel(broker){ return broker || "Company driver（个人司机）"; }
 function groupKey(broker){ return broker || SOLO_KEY; }
-function groupLink(broker){ return GROUPS[groupKey(broker)] || ""; }
+function groupLink(broker){
+  var k = groupKey(broker);
+  if(Object.prototype.hasOwnProperty.call(GROUPS, k)) return GROUPS[k] || "";
+  return TEAM_CHATS[k] || "";
+}
 
 var NOTE_CHIPS = ["//lost","//已和司机沟通","//delivered, message proof uploaded",
   "//delivered. POD updated","//delivered. POD can not be updated","//fixed, can not update POD",
@@ -813,23 +826,27 @@ function renderCard(c){
   head.appendChild(el("span","pill" + (c.shein ? " red" : ""), c.shein ? "SHEIN · 直接记丢" : (c.partner||"非 Shein")));
   head.appendChild(el("div","spacer"));
 
-  /* 三连击：消息 → 表格行 → Notes */
+  /* 三连击：消息 → 表格行 → Notes。
+     第一步如果这个中介有群链接，按钮直接做成链接：复制完就跳进群里粘贴。
+     Alain、个人司机这种没链接的，就只是普通复制。 */
   var step = c.step || 0;
-  var cyc = el("button","primary cyc", CYCLE[step].label);
+  var link = groupLink(c.broker);
+  var cyc;
+  if(step === 0 && link){
+    cyc = el("a","primary cyc wide","① 复制消息 → 去 " + groupLabel(c.broker) + " 群");
+    cyc.href = link; cyc.target = "_blank"; cyc.rel = "noopener noreferrer";
+    cyc.title = "复制消息并打开群，进去 Ctrl+V";
+  } else {
+    cyc = el("button","primary cyc", CYCLE[step].label);
+    cyc.title = CYCLE[step].tip;
+  }
   cyc.dataset.act = "cycle";
-  cyc.title = CYCLE[step].tip;
   head.appendChild(cyc);
   var dots = el("span","dots");
   for(var i=0;i<3;i++) dots.appendChild(el("i", i < step ? "on" : ""));
   head.appendChild(dots);
 
-  /* 去对应的群 */
-  var link = groupLink(c.broker);
-  if(link){
-    var a = el("a","ghost glink","去 " + groupLabel(c.broker) + " 群");
-    a.href = link; a.target = "_blank"; a.rel = "noopener noreferrer";
-    head.appendChild(a);
-  } else {
+  if(!link){
     var setg = el("button","ghost dim","设群链接");
     setg.dataset.act = "setgroup";
     head.appendChild(setg);
@@ -1099,11 +1116,9 @@ document.getElementById("cards").addEventListener("click", function(e){
       copy(cardEl.querySelector("textarea.notes").value, null, "③ Notes 已复制");
     }
     c.step = (step + 1) % 3;
-    btn.textContent = CYCLE[c.step].label;
-    btn.title = CYCLE[c.step].tip;
-    var dots = cardEl.querySelectorAll(".dots i");
-    for(var i=0;i<dots.length;i++) dots[i].className = i < c.step ? "on" : "";
     save();
+    /* 第一步那个按钮可能是链接，换步骤要整个重画（重画不影响正在打开的群） */
+    cardEl.replaceWith(renderCard(c));
   } else if(act === "setgroup"){
     openGroups(c.broker);
   } else if(act === "del"){
