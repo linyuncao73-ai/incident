@@ -400,7 +400,7 @@ var PFIX = "Fixed/no penality";
 var CYCLE = [
   {label:"① 复制消息",   tip:"复制给中介/司机的消息"},
   {label:"② 复制表格行", tip:"复制 10 列，粘进 Google Sheets"},
-  {label:"③ 复制 Notes", tip:"复制官网 incident_form 的 Notes"}
+  {label:"③ 复制 Notes + 关单", tip:"复制官网 Notes，然后自动关单、清空粘贴框"}
 ];
 
 /* WhatsApp 群链接：中介名 → 链接；空字符串这一档是个人司机的 Company driver 群。
@@ -700,7 +700,9 @@ function msgTitle(c){
   return t.titleField ? (c.customTitle||"") : t.title;
 }
 function buildMessage(c){
-  var head = c.parcelId + "\n" + c.status + "\n\n" + c.deliveryDate + " \n" + c.driverId + "-" + c.parcelNo;
+  /* 第二行是司机号；中介的司机后面带上中介名，个人司机就只有号 */
+  var who = c.driverId + (c.broker ? " " + c.broker : "");
+  var head = c.parcelId + "\n" + who + "\n\n" + c.deliveryDate + " \n" + c.driverId + "-" + c.parcelNo;
   var title = msgTitle(c), body = renderBody(c);
   var tailBlock = (title ? title + "\n" : "") + body;
   if(c.shein){
@@ -733,7 +735,9 @@ function escHtml(s){
 function buildRowHtml(c){
   var cells = rowCells(c);
   var tds = cells.map(function(v,i){
-    var css = "";
+    /* 每一格都写死白底黑字；不写的话浏览器兜底复制时会把页面那层米色背景
+       一起序列化进 HTML，粘到表格里就是一片黄 */
+    var css = "background-color:#FFFFFF;color:#000000;";
     if(i === 2){
       var hc = HANDLER_COLORS[v] || ["#EDEDED","#333333"];
       css = "background-color:" + hc[0] + ";color:" + hc[1] + ";font-weight:bold;";
@@ -747,7 +751,8 @@ function buildRowHtml(c){
   return "<tr>" + tds + "</tr>";
 }
 function wrapRows(rowsHtml){
-  return '<meta charset="utf-8"><table style="border-collapse:collapse;border:none"><tbody>' +
+  return '<meta charset="utf-8">' +
+         '<table style="border-collapse:collapse;border:none;background-color:#FFFFFF;color:#000000"><tbody>' +
          rowsHtml + "</tbody></table>";
 }
 
@@ -1046,6 +1051,14 @@ function refresh(cardEl, c){
 /* ============================================================
    事件
    ============================================================ */
+/* 关单：卡片移掉，左边粘贴框一起腾空，下一单直接粘 */
+function closeCard(c){
+  state.cards = state.cards.filter(function(x){ return x.id !== c.id; });
+  document.getElementById("raw").value = "";
+  document.getElementById("parseHint").textContent = "";
+  renderAll(); save();
+}
+
 function cardOf(node){
   var el2 = node.closest(".card");
   if(!el2) return [null,null];
@@ -1113,7 +1126,10 @@ document.getElementById("cards").addEventListener("click", function(e){
     } else if(step === 1){
       copyRich(buildRow(c), wrapRows(buildRowHtml(c)), null, "② 表格行已复制（带颜色）");
     } else {
-      copy(cardEl.querySelector("textarea.notes").value, null, "③ Notes 已复制");
+      /* 第三步：复制 Notes 之后这单就算处理完了，直接关单 */
+      copy(cardEl.querySelector("textarea.notes").value, null, "③ Notes 已复制，已关单");
+      closeCard(c);
+      return;
     }
     c.step = (step + 1) % 3;
     save();
@@ -1122,10 +1138,7 @@ document.getElementById("cards").addEventListener("click", function(e){
   } else if(act === "setgroup"){
     openGroups(c.broker);
   } else if(act === "del"){
-    state.cards = state.cards.filter(function(x){ return x.id !== c.id; });
-    document.getElementById("raw").value = "";
-    document.getElementById("parseHint").textContent = "";
-    renderAll(); save();
+    closeCard(c);
     toast("已关单，粘贴框清空了");
   }
 });
@@ -1287,6 +1300,7 @@ function fallbackRich(html, done){
   d.setAttribute("contenteditable","true");
   d.innerHTML = html;
   d.style.position = "fixed"; d.style.left = "-9999px"; d.style.top = "0";
+  d.style.background = "#FFFFFF"; d.style.color = "#000000";  /* 别让页面的米色被一起复制走 */
   document.body.appendChild(d);
   var range = document.createRange();
   range.selectNodeContents(d);
