@@ -169,6 +169,7 @@ a{color:var(--accent)}
 .f input.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
 .f input.missing{border-color:var(--accent); background:var(--accent-soft)}
 .f .sublabel{font-size:10.5px; color:var(--muted)}
+.f .sublabel.warnlab{color:var(--red); font-weight:600}
 details.custinfo{margin-top:10px}
 details.custinfo summary{font-size:12px; color:var(--muted); cursor:pointer}
 details.custinfo .grid{margin-top:9px}
@@ -454,13 +455,13 @@ var TPL = [
   {id:"shein_wrong_unit", shein:true, label:"Shein · 送错 unit", title:"Shein invalid POD",
    body:"This parcel is lost, it is a shein package. The POD is showing (unit {{podUnit}}), the correct address is (unit {{correctUnit}})",
    fields:[{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"},{k:"correctUnit",label:"正确的 unit"}],
-   tail:"", penalty:P15, reason:"Invalid POD"},
+   tail:"", penalty:P12, reason:"Wrong address"},
 
   /* ===== 非 Shein：要司机修复，带客户信息 ===== */
   {id:"wrong_address", label:"送错地址", title:"Wrong Address",
    body:"The correct address is (unit {{correctUnit}}), The POD is showing (unit {{podUnit}}).This parcel is delivered to the wrong address. Cx is complaining not able to find it. Please try to fix it.",
    fields:[{k:"correctUnit",label:"正确的 unit"},{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"}],
-   penalty:P12, reason:"Wrong address"},
+   penalty:"", reason:"Wrong address"},
   {id:"mailbox_room_fix", label:"邮箱房 · 让中介修复", title:"Mailbox Room",
    body:"This parcel is delivered to mailbox room. Cx is complaining not able to find it. Please try to fix it. Thanks",
    penalty:"", reason:"Invalid POD"},
@@ -974,8 +975,14 @@ function renderCard(c){
   });
   psel.appendChild(gTop); psel.appendChild(gRest);
   fp.appendChild(psel);
-  if(!c.penalty && c.deliveryDate){
-    fp.appendChild(el("div","sublabel","留空 → " + plusDays(c.deliveryDate,5) + " 复查，没修好就记赔"));
+  /* 规矩：Shein 直接记丢，I 列填红的；非 Shein 留空，5 天后再定要不要司机赔 */
+  if(c.shein && !c.penalty){
+    fp.appendChild(el("div","sublabel warnlab","Shein 直接记丢，这里要填红色那几项"));
+  } else if(!c.shein && c.penalty){
+    fp.appendChild(el("div","sublabel warnlab","非 Shein 一般先留空，5 天后再定是否记赔"));
+  } else if(!c.penalty && c.deliveryDate){
+    fp.appendChild(el("div","sublabel","留空 → " + plusDays(c.deliveryDate,5) +
+      " 复查；红色 = 司机赔钱"));
   }
   g3.appendChild(fp);
   g3.appendChild(field("原因（第 10 列）","reason",c.reason));
