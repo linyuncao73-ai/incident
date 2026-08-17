@@ -128,6 +128,12 @@ a{color:var(--accent)}
 }
 .chead .pid{font-family:var(--mono); font-size:14px; font-weight:600; letter-spacing:.01em}
 .chead .spacer{flex:1}
+.cyc{min-width:118px}
+.dots{display:flex; gap:4px; align-items:center; margin-left:-4px}
+.dots i{width:6px; height:6px; border-radius:50%; background:var(--line2)}
+.dots i.on{background:var(--accent)}
+.glink{text-decoration:none; white-space:nowrap}
+.ghost.dim{color:var(--muted); border-style:dashed}
 .pill{
   font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px;
   border:1px solid var(--line2); background:var(--gray-bg); white-space:nowrap;
@@ -253,6 +259,7 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
   </div>
   <div class="spacer"></div>
   <label class="handler">记录人 <select id="handler"></select></label>
+  <button class="ghost" id="btnGroups">群链接</button>
   <button class="ghost" id="btnRoster">名单</button>
   <button class="ghost" id="btnTheme">深/浅</button>
 </div>
@@ -271,6 +278,15 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
     <div class="panel" id="listPanel" hidden>
       <h2>Incident 列表（<span id="listCount">0</span>）</h2>
       <div id="listTable"></div>
+    </div>
+    <div class="panel" id="groupPanel" hidden>
+      <h2>WhatsApp 群链接</h2>
+      <p class="hint" style="margin:0 0 10px">在 WhatsApp 里「群资料 → 邀请链接 → 复制」，粘到对应的中介后面。个人司机的单走 Company driver 群。</p>
+      <div id="groupList" class="grid"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btnGroupSave">保存</button>
+        <span class="hint" id="groupHint"></span>
+      </div>
     </div>
     <div class="panel" id="rosterPanel" hidden>
       <h2>更新中介名单</h2>
@@ -378,6 +394,20 @@ function paintHandler(node, name){
 var P15 = "15-Invalid POD (Proof of Delivery)";
 var P12 = "12-Delivered to the wrong address";
 var PFIX = "Fixed/no penality";
+
+/* 三连击：一个按钮按顺序把三个输出都复制掉 */
+var CYCLE = [
+  {label:"① 复制消息",   tip:"复制给中介/司机的消息"},
+  {label:"② 复制表格行", tip:"复制 10 列，粘进 Google Sheets"},
+  {label:"③ 复制 Notes", tip:"复制官网 incident_form 的 Notes"}
+];
+
+/* WhatsApp 群链接：中介名 → 链接；空字符串这一档是个人司机的 Company driver 群 */
+var SOLO_KEY = "__solo__";
+var GROUPS = {};
+function groupLabel(broker){ return broker || "Company driver（个人司机）"; }
+function groupKey(broker){ return broker || SOLO_KEY; }
+function groupLink(broker){ return GROUPS[groupKey(broker)] || ""; }
 
 var NOTE_CHIPS = ["//lost","//已和司机沟通","//delivered, message proof uploaded",
   "//delivered. POD updated","//delivered. POD can not be updated","//fixed, can not update POD",
@@ -582,6 +612,13 @@ function load(){
     var ov = JSON.parse(localStorage.getItem(LS_KEY+".roster")||"null");
     if(ov) for(var k in ov) ROSTER[k] = ov[k];
   }catch(e){}
+  try{
+    var g = JSON.parse(localStorage.getItem(LS_KEY+".groups")||"null");
+    if(g) GROUPS = g;
+  }catch(e){}
+}
+function saveGroups(){
+  try{ localStorage.setItem(LS_KEY+".groups", JSON.stringify(GROUPS)); }catch(e){}
 }
 function rememberBroker(driverId, broker){
   if(!driverId) return;
@@ -626,6 +663,7 @@ function makeCard(o, list){
     listNote: match ? (match.notes||"") : "",
     listType: match ? (match.incidentType||"") : "",
     listAmbiguous: ambiguous,
+    step: 0,
     msgEdited:null
   };
   c.inputs.correctUnit = (o.unit && o.unit !== "N/A") ? o.unit : (streetNo ? streetNo[0] : "");
@@ -774,8 +812,32 @@ function renderCard(c){
   head.appendChild(el("span","pill" + (c.status==="DELIVERED" ? "" : " accent"), c.status||"—"));
   head.appendChild(el("span","pill" + (c.shein ? " red" : ""), c.shein ? "SHEIN · 直接记丢" : (c.partner||"非 Shein")));
   head.appendChild(el("div","spacer"));
-  var del = el("button","ghost","移除");
+
+  /* 三连击：消息 → 表格行 → Notes */
+  var step = c.step || 0;
+  var cyc = el("button","primary cyc", CYCLE[step].label);
+  cyc.dataset.act = "cycle";
+  cyc.title = CYCLE[step].tip;
+  head.appendChild(cyc);
+  var dots = el("span","dots");
+  for(var i=0;i<3;i++) dots.appendChild(el("i", i < step ? "on" : ""));
+  head.appendChild(dots);
+
+  /* 去对应的群 */
+  var link = groupLink(c.broker);
+  if(link){
+    var a = el("a","ghost glink","去 " + groupLabel(c.broker) + " 群");
+    a.href = link; a.target = "_blank"; a.rel = "noopener noreferrer";
+    head.appendChild(a);
+  } else {
+    var setg = el("button","ghost dim","设群链接");
+    setg.dataset.act = "setgroup";
+    head.appendChild(setg);
+  }
+
+  var del = el("button","ghost","关单");
   del.dataset.act = "del";
+  del.title = "这单处理完了：移掉卡片并清空左边的粘贴框";
   head.appendChild(del);
   card.appendChild(head);
 
@@ -990,10 +1052,12 @@ document.getElementById("cards").addEventListener("input", function(e){
 
 document.getElementById("cards").addEventListener("change", function(e){
   var k = e.target.dataset.k;
-  if(k !== "tplId" && k !== "penalty") return;
+  if(k !== "tplId" && k !== "penalty" && k !== "broker") return;
   var pair = cardOf(e.target), c = pair[0], cardEl = pair[1];
   if(!c) return;
   if(k === "penalty"){ c.penalty = e.target.value; refresh(cardEl,c); save(); return; }
+  /* 中介改了，头上那个「去 X 群」也得跟着换 */
+  if(k === "broker"){ c.broker = e.target.value.trim(); cardEl.replaceWith(renderCard(c)); save(); return; }
   c.tplId = e.target.value;
   var t = tplById(c.tplId);
   c.penalty = t.penalty; c.reason = t.reason;
@@ -1024,9 +1088,30 @@ document.getElementById("cards").addEventListener("click", function(e){
     c.msgEdited = null;
     cardEl.replaceWith(renderCard(c));
     save();
+  } else if(act === "cycle"){
+    var step = c.step || 0;
+    if(step === 0){
+      copy(cardEl.querySelector("textarea.msg").value, null,
+           c.shein ? "① Shein 简洁版消息已复制" : "① 消息已复制");
+    } else if(step === 1){
+      copyRich(buildRow(c), wrapRows(buildRowHtml(c)), null, "② 表格行已复制（带颜色）");
+    } else {
+      copy(cardEl.querySelector("textarea.notes").value, null, "③ Notes 已复制");
+    }
+    c.step = (step + 1) % 3;
+    btn.textContent = CYCLE[c.step].label;
+    btn.title = CYCLE[c.step].tip;
+    var dots = cardEl.querySelectorAll(".dots i");
+    for(var i=0;i<dots.length;i++) dots[i].className = i < c.step ? "on" : "";
+    save();
+  } else if(act === "setgroup"){
+    openGroups(c.broker);
   } else if(act === "del"){
     state.cards = state.cards.filter(function(x){ return x.id !== c.id; });
+    document.getElementById("raw").value = "";
+    document.getElementById("parseHint").textContent = "";
     renderAll(); save();
+    toast("已关单，粘贴框清空了");
   }
 });
 
@@ -1049,7 +1134,9 @@ document.getElementById("btnParse").addEventListener("click", function(){
   msg.push("新增 " + added + " 单");
   if(dup) msg.push("跳过重复 " + dup);
   document.getElementById("parseHint").textContent = msg.join(" · ");
-  if(!added && !list.length) toast("没认出 Edit Order 的内容");
+  if(!added && !list.length){ toast("没认出 Edit Order 的内容"); return; }
+  /* 解析成功就把框腾空，下一单直接粘 */
+  document.getElementById("raw").value = "";
 });
 
 document.getElementById("btnClear").addEventListener("click", function(){
@@ -1072,6 +1159,44 @@ document.getElementById("btnCopyMsgAll").addEventListener("click", function(){
   copy(state.cards.map(function(c){
     return c.msgEdited !== null ? c.msgEdited : buildMessage(c);
   }).join("\n\n———\n\n"), this, "全部消息已复制");
+});
+
+/* ---------- 群链接 ---------- */
+function renderGroups(){
+  var host = document.getElementById("groupList");
+  host.textContent = "";
+  [""].concat(BROKERS).forEach(function(b){
+    var wrap = el("div","f");
+    wrap.appendChild(el("label",null,groupLabel(b)));
+    var inp = el("input");
+    inp.value = groupLink(b);
+    inp.placeholder = "https://chat.whatsapp.com/…";
+    inp.dataset.group = groupKey(b);
+    wrap.appendChild(inp);
+    host.appendChild(wrap);
+  });
+}
+function openGroups(focusBroker){
+  var p = document.getElementById("groupPanel");
+  renderGroups();
+  p.hidden = false;
+  var sel = p.querySelector('[data-group="' + groupKey(focusBroker || "") + '"]');
+  if(sel) sel.focus();
+}
+document.getElementById("btnGroups").addEventListener("click", function(){
+  var p = document.getElementById("groupPanel");
+  if(p.hidden) openGroups(); else p.hidden = true;
+});
+document.getElementById("btnGroupSave").addEventListener("click", function(){
+  var n = 0;
+  document.querySelectorAll("#groupList [data-group]").forEach(function(inp){
+    var v = inp.value.trim();
+    if(v){ GROUPS[inp.dataset.group] = v; n++; }
+    else delete GROUPS[inp.dataset.group];
+  });
+  saveGroups();
+  document.getElementById("groupHint").textContent = "存了 " + n + " 个群";
+  renderAll();
 });
 
 document.getElementById("btnRoster").addEventListener("click", function(){
