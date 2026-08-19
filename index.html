@@ -452,6 +452,9 @@ var TPL = [
   {id:"shein_corner", shein:true, label:"Shein · 随意角落", title:"Shein invalid POD",
    body:"This parcel is lost, it is a shein package. This parcel is delivered to a random corner",
    tail:"", penalty:P15, reason:"Invalid POD"},
+  {id:"shein_missing_label", shein:true, label:"Shein · 缺面单照片", title:"Shein missing label picture",
+   body:"This parcel is lost, it is a shein package. This parcel is missing label picture, and cx is complaining not receiving the package",
+   tail:"", penalty:P15, reason:"Invalid POD"},
   {id:"shein_wrong_unit", shein:true, label:"Shein · 送错 unit", title:"Shein invalid POD",
    body:"This parcel is lost, it is a shein package. The POD is showing (unit {{podUnit}}), the correct address is (unit {{correctUnit}})",
    fields:[{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"},{k:"correctUnit",label:"正确的 unit"}],
@@ -718,12 +721,12 @@ function driverLabel(c){
   return (c.driverId + " " + name).trim();
 }
 function buildMessage(c){
-  var head = c.parcelId + "\n" + driverLabel(c) + "\n\n" +
-             c.deliveryDate + " \n" + c.driverId + "-" + c.parcelNo;
+  /* 司机号在 19993-94 那行已经有了，开头不再重复一遍 */
+  var head = c.parcelId + "\n\n" + c.deliveryDate + " \n" + c.driverId + "-" + c.parcelNo;
   var title = msgTitle(c), body = renderBody(c);
   var tailBlock = (title ? title + "\n" : "") + body;
   if(c.shein){
-    return head + "\n\n" + tailBlock;
+    return head + "\n\n" + body;   /* Shein 直接给正文，不带标题 */
   }
   return head + "\n" +
     "Contact Info\n" +
