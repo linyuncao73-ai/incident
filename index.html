@@ -714,7 +714,8 @@ function buildMessage(c){
   var title = msgTitle(c), body = renderBody(c);
   var tailBlock = (title ? title + "\n" : "") + body;
   if(c.shein){
-    return head + "\n\n" + body;   /* Shein 直接给正文，不带标题 */
+    /* Shein 单：司机号-站点号 之后、正文之前，标一行 Shein Package */
+    return head + "\n\nShein Package\n" + body;
   }
   return head + "\n" +
     "Contact Info\n" +
@@ -729,8 +730,9 @@ function buildMessage(c){
     tailBlock;
 }
 function rowCells(c){
+  /* 第 8 列（地址）不再复制，留空 */
   return [c.issueDate, c.deliveryDate, state.handler || "Lin", c.broker, c.driverId,
-          c.parcelNo, c.parcelId, c.address, c.penalty, c.reason];
+          c.parcelNo, c.parcelId, "", c.penalty, c.reason];
 }
 function buildRow(c){ return rowCells(c).join("\t"); }
 
@@ -907,7 +909,7 @@ function renderCard(c){
     placeholder:"Driver Memo 里没有，手填"}));
   g1.appendChild(field("中介（个人司机留空）","broker",c.broker,{list:"brokerList",
     sub: c.brokerKnown ? (c.broker ? "名单：" + c.broker : "名单：个人/仓库司机，留空") : "名单里没这个司机，填一次就记住"}));
-  g1.appendChild(field("地址（进表格第 8 列）","address",c.address));
+  g1.appendChild(field("地址（只作参考，不进表格）","address",c.address));
   g1.appendChild(field("司机","driverName",c.driverName,{sub:c.warehouse||""}));
   s1.appendChild(g1);
 
