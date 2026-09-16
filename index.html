@@ -285,6 +285,11 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
     <div class="panel" id="groupPanel" hidden>
       <h2>WhatsApp 群链接</h2>
       <p class="hint" style="margin:0 0 10px">在 WhatsApp 里「群资料 → 邀请链接 → 复制」，粘到对应的中介后面。个人司机的单走 Company driver 群。</p>
+      <div class="row" style="margin:0 0 12px">
+        <span class="hint">跳转方式</span>
+        <label class="hint"><input type="radio" name="walaunch" value="app"> 直接开 WhatsApp（不留网页）</label>
+        <label class="hint"><input type="radio" name="walaunch" value="web"> 开网页版</label>
+      </div>
       <div id="groupList" class="grid"></div>
       <div class="row" style="margin-top:10px">
         <button class="primary" id="btnGroupSave">保存</button>
@@ -430,6 +435,22 @@ var SOLO_KEY = "__solo__";
 var GROUPS = {};
 function groupLabel(broker){ return broker || "Company driver（个人司机）"; }
 function groupKey(broker){ return broker || SOLO_KEY; }
+/* https://chat.whatsapp.com/<code> → whatsapp://chat?code=<code>
+   走 App 协议就不会先弹一个 WhatsApp 网页出来 */
+function waAppLink(url){
+  var m = /chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]+)/.exec(url || "");
+  return m ? "whatsapp://chat?code=" + m[1] : "";
+}
+var waMode = "app";   /* app = 直接开 WhatsApp；web = 开网页版 */
+function groupHref(broker){
+  var url = groupLink(broker);
+  if(!url) return "";
+  if(waMode === "app"){
+    var app = waAppLink(url);
+    if(app) return app;
+  }
+  return url;
+}
 function groupLink(broker){
   var k = groupKey(broker);
   if(Object.prototype.hasOwnProperty.call(GROUPS, k)) return GROUPS[k] || "";
@@ -856,7 +877,8 @@ function renderCard(c){
   var cyc;
   if(step === 0 && link){
     cyc = el("a","primary cyc wide","① 复制消息 → 去 " + groupLabel(c.broker) + " 群");
-    cyc.href = link; cyc.target = "_blank"; cyc.rel = "noopener noreferrer";
+    cyc.href = groupHref(c.broker);
+    if(waMode !== "app"){ cyc.target = "_blank"; cyc.rel = "noopener noreferrer"; }
     cyc.title = "复制消息并打开群，进去 Ctrl+V";
   } else {
     cyc = el("button","primary cyc", CYCLE[step].label);
@@ -1231,9 +1253,20 @@ function openGroups(focusBroker){
   var p = document.getElementById("groupPanel");
   renderGroups();
   p.hidden = false;
+  applyWaMode(waMode);
   var sel = p.querySelector('[data-group="' + groupKey(focusBroker || "") + '"]');
   if(sel) sel.focus();
 }
+function applyWaMode(mode){
+  waMode = (mode === "web") ? "web" : "app";
+  try{ localStorage.setItem(LS_KEY+".walaunch", waMode); }catch(e){}
+  document.querySelectorAll('input[name="walaunch"]').forEach(function(r){
+    r.checked = (r.value === waMode);
+  });
+}
+document.addEventListener("change", function(e){
+  if(e.target.name === "walaunch"){ applyWaMode(e.target.value); renderAll(); }
+});
 document.getElementById("btnGroups").addEventListener("click", function(){
   var p = document.getElementById("groupPanel");
   if(p.hidden) openGroups(); else p.hidden = true;
@@ -1373,6 +1406,11 @@ function toast(msg){
     try{ localStorage.setItem(LS_KEY+".handler", hsel.value); }catch(e){}
     renderAll(); save();
   });
+
+  try{
+    var wm = localStorage.getItem(LS_KEY+".walaunch");
+    if(wm) waMode = (wm === "web") ? "web" : "app";
+  }catch(e){}
 
   var dl = document.createElement("datalist");
   dl.id = "brokerList";

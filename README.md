@@ -27,7 +27,11 @@
    个人司机暂时没链接，就只是普通复制。
 5. 三步走完自动关单；也可以随时手动点「关单」——都会顺带清空左边的粘贴框
 
-**群链接**：Alain / Christ / Kaneza / Alawi / Parfait 的群已经内置。缺的（Company driver）在右上角
+**群链接**：点「去 XX 群」默认走 `whatsapp://` 协议**直接开 WhatsApp App**，不会再多弹一个
+WhatsApp 网页出来。要是你的电脑拦了这种跳转，在「群链接」面板里把跳转方式切成「开网页版」即可，
+选择会记住。
+
+Alain / Christ / Kaneza / Alawi / Parfait 的群已经内置。缺的（Company driver）在右上角
 「群链接」里补一次就行（WhatsApp → 群资料 → 邀请链接 → 复制），存在浏览器本地；在那里填的会覆盖内置的。
 中介留空 = 个人司机，走 Company driver 群。
 
