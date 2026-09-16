@@ -23,11 +23,11 @@
    第三下复制 Notes **并自动关单**（卡片移掉、粘贴框清空）。旁边三个点显示走到哪了。
    每个输出旁边也各有自己的复制按钮，想单独重来都行。
 
-   有群链接的中介（Christ / Kaneza / Alawi / Parfait），第一下会**顺手把群打开**，进去 Ctrl+V 就行。
-   Alain 和个人司机暂时没链接，就只是普通复制。
+   有群链接的中介（Alain / Christ / Kaneza / Alawi / Parfait），第一下会**顺手把群打开**，进去 Ctrl+V 就行。
+   个人司机暂时没链接，就只是普通复制。
 5. 三步走完自动关单；也可以随时手动点「关单」——都会顺带清空左边的粘贴框
 
-**群链接**：Christ / Kaneza / Alawi / Parfait 的群已经内置。缺的（Alain、Company driver）在右上角
+**群链接**：Alain / Christ / Kaneza / Alawi / Parfait 的群已经内置。缺的（Company driver）在右上角
 「群链接」里补一次就行（WhatsApp → 群资料 → 邀请链接 → 复制），存在浏览器本地；在那里填的会覆盖内置的。
 中介留空 = 个人司机，走 Company driver 群。
 
