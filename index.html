@@ -257,46 +257,47 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
 
 <div class="topbar">
   <div class="brand">
-    <h1>Incident 处理台</h1>
-    <span class="sub">Ottawa Warehouse · 粘贴 → 消息 · 表格行 · Notes</span>
+    <h1 data-i18n="appName">Incident 处理台</h1>
+    <span class="sub" data-i18n="appSub">Ottawa Warehouse · 粘贴 → 消息 · 表格行 · Notes</span>
   </div>
   <div class="spacer"></div>
-  <label class="handler">记录人 <select id="handler"></select></label>
-  <button class="ghost" id="btnGroups">群链接</button>
-  <button class="ghost" id="btnRoster">名单</button>
-  <button class="ghost" id="btnTheme">深/浅</button>
+  <label class="handler"><span data-i18n="handler">记录人</span> <select id="handler"></select></label>
+  <button class="ghost" id="btnGroups" data-i18n="btnGroups">群链接</button>
+  <button class="ghost" id="btnRoster" data-i18n="btnRoster">名单</button>
+  <button class="ghost" id="btnLang" title="中文 / English">EN</button>
+  <button class="ghost" id="btnTheme" data-i18n="btnTheme">深/浅</button>
 </div>
 
 <div class="layout">
   <div class="pane">
     <div class="panel">
-      <h2>① 粘贴 Ctrl+A 的文字</h2>
-      <textarea id="raw" placeholder="在官网 incident 列表页 / Edit Order 页面按 Ctrl+A、Ctrl+C，然后粘到这里。可以一次粘多个单。"></textarea>
+      <h2 data-i18n="paneTitle">① 粘贴 Ctrl+A 的文字</h2>
+      <textarea id="raw" data-i18n-ph="rawPh"></textarea>
       <div class="row" style="margin-top:10px">
-        <button class="primary" id="btnParse">解析</button>
-        <button class="ghost" id="btnClear">清空全部</button>
+        <button class="primary" id="btnParse" data-i18n="parse">解析</button>
+        <button class="ghost" id="btnClear" data-i18n="clearAll">清空全部</button>
         <span class="hint" id="parseHint"></span>
       </div>
     </div>
     <div class="panel" id="listPanel" hidden>
-      <h2>Incident 列表（<span id="listCount">0</span>）</h2>
+      <h2><span data-i18n="listTitle">Incident 列表</span> · <span id="listCount">0</span></h2>
       <div id="listTable"></div>
     </div>
     <div class="panel" id="groupPanel" hidden>
-      <h2>WhatsApp 群链接</h2>
-      <p class="hint" style="margin:0 0 10px">在 WhatsApp 里「群资料 → 邀请链接 → 复制」，粘到对应的中介后面。个人司机的单走 Company driver 群。</p>
+      <h2 data-i18n="groupTitle">WhatsApp 群链接</h2>
+      <p class="hint" style="margin:0 0 10px" data-i18n="groupHintText"></p>
       <div id="groupList" class="grid"></div>
       <div class="row" style="margin-top:10px">
-        <button class="primary" id="btnGroupSave">保存</button>
+        <button class="primary" id="btnGroupSave" data-i18n="save">保存</button>
         <span class="hint" id="groupHint"></span>
       </div>
     </div>
     <div class="panel" id="rosterPanel" hidden>
-      <h2>更新中介名单</h2>
-      <p class="hint" style="margin:0 0 8px">每行一个：<code>司机ID</code> + 空格/逗号/Tab + <code>中介名</code>。中介名留空 = 个人司机。</p>
+      <h2 data-i18n="rosterTitle">更新中介名单</h2>
+      <p class="hint" style="margin:0 0 8px" data-i18n="rosterHintText"></p>
       <textarea id="rosterInput" style="width:100%;height:120px;padding:8px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);font-family:var(--mono);font-size:12px" placeholder="5002460&#9;Parfait&#10;19999"></textarea>
       <div class="row" style="margin-top:8px">
-        <button class="primary" id="btnRosterSave">保存</button>
+        <button class="primary" id="btnRosterSave" data-i18n="save">保存</button>
         <span class="hint" id="rosterHint"></span>
       </div>
     </div>
@@ -304,15 +305,15 @@ table.tsv td.empty::after{content:"—"; color:var(--muted)}
 
   <div>
     <div id="cards"></div>
-    <div class="empty" id="emptyState">还没有单子。把 Edit Order 页面 Ctrl+A 的文字粘到左边，点「解析」。</div>
+    <div class="empty" id="emptyState" data-i18n="emptyState"></div>
   </div>
 </div>
 
 <div class="bottombar">
   <span class="count" id="footCount">0 单</span>
   <div class="spacer"></div>
-  <button class="ghost" id="btnCopyMsgAll">复制全部消息</button>
-  <button class="primary" id="btnCopyAll">复制全部表格行</button>
+  <button class="ghost" id="btnCopyMsgAll" data-i18n="copyMsgAll">复制全部消息</button>
+  <button class="primary" id="btnCopyAll" data-i18n="copyRowAll">复制全部表格行</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -351,7 +352,7 @@ var ROSTER = (function(){
 /* I 列下拉：完全照搬表格的数据验证（含 Fixed/no penality、Warehouse relarted 的原拼法），
    颜色也照搬，粘进 Sheets 才会匹配上下拉并自动上色 */
 var PENALTIES = [
-  {v:"", label:"（留空）待司机修复，5 天后再定", cls:"pen-blank", top:true},
+  {v:"", labelKey:"penBlank", cls:"pen-blank", top:true},
   {v:"15-Invalid POD (Proof of Delivery)", cls:"pen-red", top:true},
   {v:"12-Delivered to the wrong address", cls:"pen-red", top:true},
   {v:"Fixed/no penality", cls:"pen-gray", top:true},
@@ -410,11 +411,7 @@ var P12 = "12-Delivered to the wrong address";
 var PFIX = "Fixed/no penality";
 
 /* 三连击：一个按钮按顺序把三个输出都复制掉 */
-var CYCLE = [
-  {label:"① 复制消息",   tip:"复制给中介/司机的消息"},
-  {label:"② 复制表格行", tip:"复制 10 列，粘进 Google Sheets"},
-  {label:"③ 复制 Notes + 关单", tip:"复制官网 Notes，然后自动关单、清空粘贴框"}
-];
+var CYCLE = [{key:"cyc1"}, {key:"cyc2"}, {key:"cyc3"}];
 
 /* WhatsApp 群链接：中介名 → 链接；空字符串这一档是个人司机的 Company driver 群。
    Company driver（个人司机）还没有链接，这种就只复制、不跳转。
@@ -428,7 +425,7 @@ var TEAM_CHATS = {
 };
 var SOLO_KEY = "__solo__";
 var GROUPS = {};
-function groupLabel(broker){ return broker || "Company driver（个人司机）"; }
+function groupLabel(broker){ return broker || t("soloGroup"); }
 function groupKey(broker){ return broker || SOLO_KEY; }
 function groupLink(broker){
   var k = groupKey(broker);
@@ -436,57 +433,67 @@ function groupLink(broker){
   return TEAM_CHATS[k] || "";
 }
 
-var NOTE_CHIPS = ["//lost","//已和司机沟通","//delivered, message proof uploaded",
-  "//delivered. POD updated","//delivered. POD can not be updated","//fixed, can not update POD",
-  "//已归仓","//已提醒司机","//已提醒司机需要拍到交接的照片","//如果之后有投诉没送到就记丢",
-  "//这单已经记丢过一次了，这个incident里面不记丢"];
+/* 这些是要写进官网表单的原文，不翻译；英文界面下鼠标停上去给一句英文解释 */
+var NOTE_CHIPS = [
+  {v:"//lost", en:"written off as lost"},
+  {v:"//已和司机沟通", en:"talked to the driver"},
+  {v:"//delivered, message proof uploaded", en:""},
+  {v:"//delivered. POD updated", en:""},
+  {v:"//delivered. POD can not be updated", en:""},
+  {v:"//fixed, can not update POD", en:""},
+  {v:"//已归仓", en:"returned to the warehouse"},
+  {v:"//已提醒司机", en:"reminded the driver"},
+  {v:"//已提醒司机需要拍到交接的照片", en:"reminded the driver to photograph the handover"},
+  {v:"//如果之后有投诉没送到就记丢", en:"if another complaint comes in, write it off"},
+  {v:"//这单已经记丢过一次了，这个incident里面不记丢", en:"already written off once — not counted again here"}
+];
 
 /* ---------- 场景模板 ---------- */
 var TPL = [
   /* ===== Shein：直接记丢，消息里不含客户信息 ===== */
-  {id:"shein_mailbox_room", shein:true, label:"Shein · 邮箱房", title:"Shein mailbox room",
+  {id:"shein_mailbox_room", shein:true, label:"Shein · 邮箱房", labelEn:"Shein · mailbox room", title:"Shein mailbox room",
    body:"This parcel is lost, it is a shein package. This parcel is delivered to mailbox room.",
    tail:"invalid pod it misses unit number", penalty:P15, reason:"Invalid POD"},
-  {id:"shein_mailbox", shein:true, label:"Shein · 放邮箱", title:"Shein invalid POD Mailbox",
+  {id:"shein_mailbox", shein:true, label:"Shein · 放邮箱", labelEn:"Shein · mailbox", title:"Shein invalid POD Mailbox",
    body:"This parcel is lost, it is a shein package. This parcel is delivered to mailbox",
    tail:"", penalty:P15, reason:"Invalid POD"},
-  {id:"shein_corner", shein:true, label:"Shein · 随意角落", title:"Shein invalid POD",
+  {id:"shein_corner", shein:true, label:"Shein · 随意角落", labelEn:"Shein · random corner", title:"Shein invalid POD",
    body:"This parcel is lost, it is a shein package. This parcel is delivered to a random corner",
    tail:"", penalty:P15, reason:"Invalid POD"},
-  {id:"shein_missing_label", shein:true, label:"Shein · 缺面单照片", title:"Shein missing label picture",
+  {id:"shein_missing_label", shein:true, label:"Shein · 缺面单照片", labelEn:"Shein · missing label picture", title:"Shein missing label picture",
    body:"This parcel is lost, it is a shein package. This parcel is missing label picture, and cx is complaining not receiving the package",
    tail:"", penalty:P15, reason:"Invalid POD"},
-  {id:"shein_no_dropping", shein:true, label:"Shein · 没拍到放置点", title:"Shein no dropping location",
+  {id:"shein_no_dropping", shein:true, label:"Shein · 没拍到放置点", labelEn:"Shein · no dropping location", title:"Shein no dropping location",
    body:"This parcel is lost, it is a shein package. Invalid pod it misses drop location, and cx is claiming not receiving the package.",
    tail:"", penalty:P15, reason:"Invalid POD"},
-  {id:"shein_wrong_unit", shein:true, label:"Shein · 送错 unit", title:"Shein invalid POD",
+  {id:"shein_wrong_unit", shein:true, label:"Shein · 送错 unit", labelEn:"Shein · wrong unit", title:"Shein invalid POD",
    body:"This parcel is lost, it is a shein package. The POD is showing (unit {{podUnit}}), the correct address is (unit {{correctUnit}})",
-   fields:[{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"},{k:"correctUnit",label:"正确的 unit"}],
+   fields:[{k:"podUnit",label:"POD 上的 unit",labelEn:"Unit on the POD",ph:"照片里看到的",phEn:"from the photo"},{k:"correctUnit",label:"正确的 unit",labelEn:"Correct unit"}],
    tail:"", penalty:P12, reason:"Wrong address"},
 
   /* ===== 非 Shein：要司机修复，带客户信息 ===== */
-  {id:"wrong_address", label:"送错地址", title:"Wrong Address",
+  {id:"wrong_address", label:"送错地址", labelEn:"Wrong address", title:"Wrong Address",
    body:"The correct address is (unit {{correctUnit}}), The POD is showing (unit {{podUnit}}).This parcel is delivered to the wrong address. Cx is complaining not able to find it. Please try to fix it.",
-   fields:[{k:"correctUnit",label:"正确的 unit"},{k:"podUnit",label:"POD 上的 unit",ph:"照片里看到的"}],
+   fields:[{k:"correctUnit",label:"正确的 unit",labelEn:"Correct unit"},{k:"podUnit",label:"POD 上的 unit",labelEn:"Unit on the POD",ph:"照片里看到的",phEn:"from the photo"}],
    penalty:"", reason:"Wrong address"},
-  {id:"mailbox_room_proof", label:"邮箱房 · 要短信证明", title:"Mailbox Room",
+  {id:"mailbox_room_proof", label:"邮箱房 · 要短信证明", labelEn:"Mailbox room · ask for proof", title:"Mailbox Room",
    body:"This parcel is delivered to mailbox room. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks",
    penalty:"", reason:"Invalid POD"},
-  {id:"corner_proof", label:"随意角落 · 要短信证明", title:"Invalid POD",
+  {id:"corner_proof", label:"随意角落 · 要短信证明", labelEn:"Random corner · ask for proof", title:"Invalid POD",
    body:"This parcel is delivered to a random corner. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks",
    penalty:"", reason:"Invalid POD"},
-  {id:"no_dropping", label:"没拍到 unit / 放置点", title:"No dropping location",
+  {id:"no_dropping", label:"没拍到 unit / 放置点", labelEn:"No unit / dropping location", title:"No dropping location",
    body:"The POD does not include unit number nor dropping location, please get a message proof from cx, thanks",
    penalty:"", reason:"Invalid POD"},
-  {id:"missing_label_proof", label:"没拍到 label picture · 要短信证明", title:"Missing label picture",
+  {id:"missing_label_proof", label:"没拍到 label picture · 要短信证明", labelEn:"No label picture · ask for proof", title:"Missing label picture",
    body:"The POD does not include the label picture. Please try to contact the customer and get a message proof with parcel ID in it showing the parcel was delivered. Thanks",
    penalty:"", reason:"Invalid POD"},
-  {id:"damaged", label:"破损 / 漏液", title:"Damaged",
+  {id:"damaged", label:"破损 / 漏液", labelEn:"Damaged / leaking", title:"Damaged",
    body:"This parcel is reported leaked, please note if your driver find any parcel that is leaked or damaged, please ask the driver to return it to office and let office check before delivering in the morning. For this parcel, we will not charge your driver, but please notify your drivers about damaged and leaked parcels, thanks",
    penalty:PFIX, reason:"Damaged"},
-  {id:"custom", label:"自定义", title:"",
+  {id:"custom", label:"自定义", labelEn:"Custom", title:"",
    body:"{{text}}",
-   fields:[{k:"text",label:"自己写正文",ph:"随便写"}], titleField:true,
+   fields:[{k:"text",label:"自己写正文",labelEn:"Write the body",ph:"随便写",phEn:"anything"}], titleField:true,
    penalty:"", reason:""}
 ];
 function tplById(id){ for(var i=0;i<TPL.length;i++){ if(TPL[i].id===id) return TPL[i]; } return TPL[0]; }
@@ -606,6 +613,145 @@ function parseOrderBlock(b){
 /* ============================================================
    状态
    ============================================================ */
+/* ============================================================
+   中英文案。t("key") 取当前语言；loc(zh,en) 给模板这种成对的字段
+   ============================================================ */
+var LANG = "zh";
+var TXT = {
+  appName:      ["Incident 处理台", "Incident Console"],
+  appSub:       ["Ottawa Warehouse · 粘贴 → 消息 · 表格行 · Notes",
+                 "Ottawa Warehouse · paste → message · sheet row · notes"],
+  handler:      ["记录人", "Handled by"],
+  btnGroups:    ["群链接", "Groups"],
+  btnRoster:    ["名单", "Roster"],
+  btnTheme:     ["深/浅", "Theme"],
+  paneTitle:    ["① 粘贴 Ctrl+A 的文字", "① Paste the Ctrl+A text"],
+  rawPh:        ["在官网 incident 列表页 / Edit Order 页面按 Ctrl+A、Ctrl+C，然后粘到这里。可以一次粘多个单。",
+                 "On the incident list or Edit Order page press Ctrl+A then Ctrl+C, and paste it here. Several orders at once is fine."],
+  parse:        ["解析", "Parse"],
+  clearAll:     ["清空全部", "Clear all"],
+  listTitle:    ["Incident 列表", "Incident list"],
+  groupTitle:   ["WhatsApp 群链接", "WhatsApp groups"],
+  groupHintText:["在 WhatsApp 里「群资料 → 邀请链接 → 复制」，粘到对应的中介后面。个人司机的单走 Company driver 群。",
+                 "In WhatsApp: Group info → Invite link → Copy, then paste it next to the broker. Individual drivers go to the Company driver group."],
+  save:         ["保存", "Save"],
+  rosterTitle:  ["更新中介名单", "Update broker roster"],
+  rosterHintText:["每行一个：司机ID + 空格/逗号/Tab + 中介名。中介名留空 = 个人司机。",
+                 "One per line: driver ID + space/comma/Tab + broker. Leave the broker empty for an individual driver."],
+  emptyState:   ["还没有单子。把 Edit Order 页面 Ctrl+A 的文字粘到左边，点「解析」。",
+                 "Nothing here yet. Paste the Ctrl+A text from an Edit Order page on the left and hit Parse."],
+  copyMsgAll:   ["复制全部消息", "Copy all messages"],
+  copyRowAll:   ["复制全部表格行", "Copy all rows"],
+  orders:       ["单", "orders"],
+  penBlank:     ["（留空）待司机修复，5 天后再定", "(blank) driver fixes it, decide in 5 days"],
+  cyc1:         ["① 复制消息", "① Copy message"],
+  cyc1Tip:      ["复制给中介/司机的消息", "Copies the message for the broker or driver"],
+  cyc2:         ["② 复制表格行", "② Copy sheet row"],
+  cyc2Tip:      ["复制 10 列，粘进 Google Sheets", "10 columns, ready to paste into Google Sheets"],
+  cyc3:         ["③ 复制 Notes + 关单", "③ Copy notes + close"],
+  cyc3Tip:      ["复制官网 Notes，然后自动关单、清空粘贴框",
+                 "Copies the notes for incident_form, then closes this order and clears the paste box"],
+  soloGroup:    ["Company driver（个人司机）", "Company driver"],
+  openGroup:    ["① 复制消息 → 去 ", "① Copy message → "],
+  openGroupEnd: [" 群", " group"],
+  openGroupTip: ["复制消息并打开群，进去 Ctrl+V", "Copies the message and opens the group — press Ctrl+V there"],
+  setGroup:     ["设群链接", "Set group link"],
+  closeOrder:   ["关单", "Close"],
+  closeTip:     ["这单处理完了：移掉卡片并清空左边的粘贴框",
+                 "Done with this one — removes the card and clears the paste box"],
+  inList:       ["· 已在右边", "· open on the right"],
+  sheinPill:    ["SHEIN · 直接记丢", "SHEIN · written off"],
+  notShein:     ["非 Shein", "Not Shein"],
+  sheinWarn:    ["Shein 直接记丢，记丢就不能再修复。消息用简洁版，不含收件人、电话、邮箱、地址——别让司机拿着客户信息去找客户「修复」。",
+                 "Shein parcels are written off as lost and cannot be fixed afterwards. The message is the short version with no consignee, phone, email or address, so nobody goes to the customer to \"fix\" it."],
+  statusWarnA:  ["这单状态是 ", "This order is "],
+  statusWarnB:  ["，不是 DELIVERED，下面的模板是给已妥投的单用的。",
+                 ", not DELIVERED. The templates below are meant for delivered parcels."],
+  supportLogged:["客服记的：", "Support logged: "],
+  ambiguous:    [" ⚠ 这个司机今天有多条投诉，列表里没有单号，自己对一下是哪条",
+                 " ⚠ this driver has several complaints today and the list carries no tracking numbers — check which one this is"],
+  fieldsTitle:  ["字段（解析错了直接改）", "Fields (fix anything parsed wrong)"],
+  fDelivery:    ["Delivery date", "Delivery date"],
+  fDriverId:    ["Driver ID", "Driver ID"],
+  fParcelNo:    ["Parcel #（站点号）", "Parcel # (stop no.)"],
+  fParcelNoPh:  ["Driver Memo 里没有，手填", "not in Driver Memo — type it"],
+  fBroker:      ["中介（个人司机留空）", "Broker (blank = individual driver)"],
+  rosterSays:   ["名单：", "Roster: "],
+  rosterSolo:   ["名单：个人/仓库司机，留空", "Roster: individual driver — leave blank"],
+  rosterUnknown:["名单里没这个司机，填一次就记住", "Not in the roster — fill it once and it is remembered"],
+  fAddress:     ["地址（只作参考，不进表格）", "Address (reference only, not copied)"],
+  fDriver:      ["司机", "Driver"],
+  custInfoShein:["客户信息（Shein 简洁版不会写进消息）", "Customer info (kept out of the Shein short message)"],
+  custInfo:     ["客户信息（会写进消息）", "Customer info (goes into the message)"],
+  sceneTitle:   ["场景", "Scenario"],
+  fTemplate:    ["模板", "Template"],
+  fMsgTitle:    ["消息标题（可留空）", "Message title (optional)"],
+  fTail:        ["补充说明（接在正文后面）", "Extra note (appended to the body)"],
+  fTailPh:      ["可留空", "optional"],
+  fPenalty:     ["是否记赔（表格第 9 列）", "Penalty (column 9)"],
+  penCommon:    ["常用", "Common"],
+  penOthers:    ["其他（表格下拉的全部选项）", "Others (everything in the sheet dropdown)"],
+  warnSheinPen: ["Shein 直接记丢，这里要填红色那几项", "Shein is written off — pick one of the red options"],
+  warnNonShein: ["非 Shein 一般先留空，5 天后再定是否记赔",
+                 "Non-Shein usually starts blank — decide in 5 days"],
+  reviewA:      ["留空 → ", "Blank → review on "],
+  reviewB:      [" 复查；红色 = 司机赔钱", "; red means the driver pays"],
+  fReason:      ["原因（第 10 列）", "Reason (column 10)"],
+  out1:         ["① 发给中介的消息", "① Message for the broker"],
+  regen:        ["重新生成", "Regenerate"],
+  copy:         ["复制", "Copy"],
+  out2:         ["② 表格行（10 列）", "② Sheet row (10 columns)"],
+  copyRow:      ["复制这一行", "Copy this row"],
+  out3:         ["③ 官网 incident_form 的 Notes", "③ Notes for incident_form"],
+  copied:       ["已复制", "Copied"],
+  tMsgShein:    ["Shein 简洁版已复制", "Shein short message copied"],
+  tMsg:         ["消息已复制", "Message copied"],
+  tRow:         ["表格行已复制（带颜色）", "Row copied, colours included"],
+  tNotes:       ["Notes 已复制", "Notes copied"],
+  tMsgShein1:   ["① Shein 简洁版消息已复制", "① Shein short message copied"],
+  tMsg1:        ["① 消息已复制", "① Message copied"],
+  tRow2:        ["② 表格行已复制（带颜色）", "② Row copied, colours included"],
+  tNotes3:      ["③ Notes 已复制，已关单", "③ Notes copied — order closed"],
+  tClosed:      ["已关单，粘贴框清空了", "Closed, paste box cleared"],
+  tPasteFirst:  ["先把 Ctrl+A 的文字粘进来", "Paste the Ctrl+A text first"],
+  hintList:     ["列表 ", "list "],
+  hintListEnd:  [" 条", ""],
+  hintAdded:    ["新增 ", ""],
+  hintAddedEnd: [" 单", " new"],
+  hintDup:      ["跳过重复 ", "skipped "],
+  hintDupEnd:   ["", " duplicate"],
+  tNoParse:     ["没认出 Edit Order 的内容", "No Edit Order content found"],
+  confirmClear: ["清空所有卡片和列表？", "Clear all cards and the list?"],
+  tNoCards:     ["还没有单子", "No orders yet"],
+  tRowsA:       ["", ""],
+  tRowsB:       [" 行已复制（带颜色）", " rows copied, colours included"],
+  tAllMsg:      ["全部消息已复制", "All messages copied"],
+  tGroupsSaved: ["存了 ", "Saved "],
+  tGroupsSavedB:[" 个群", " groups"],
+  tRosterSaved: ["更新了 ", "Updated "],
+  tRosterSavedB:[" 个司机", " drivers"],
+  tCopyFail:    ["复制失败，手动选中复制吧", "Copy failed — select the text and copy it manually"],
+  hToday:       ["今天日期", "Today"],
+  hName:        ["名字", "Name"],
+  hBroker:      ["中介", "Broker"],
+  hAddress:     ["地址", "Address"],
+  hPenalty:     ["是否记赔", "Penalty"],
+  hReason:      ["原因", "Reason"]
+};
+function t(k){ var v = TXT[k]; return v ? (LANG === "en" ? v[1] : v[0]) : k; }
+function loc(zh, en){ return (LANG === "en" && en) ? en : zh; }
+function applyStatic(){
+  document.querySelectorAll("[data-i18n]").forEach(function(n){
+    n.textContent = t(n.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(n){
+    n.placeholder = t(n.dataset.i18nPh);
+  });
+  document.documentElement.lang = (LANG === "en") ? "en" : "zh-CN";
+  var b = document.getElementById("btnLang");
+  if(b) b.textContent = (LANG === "en") ? "中文" : "EN";
+}
+
 var LS_KEY = "incidentTool.v1";
 var state = {date: todayStr(), cards: [], list: [], handler: "Lin"};
 
@@ -667,8 +813,8 @@ function makeCard(o, list){
   }
   var known = Object.prototype.hasOwnProperty.call(ROSTER, o.driverId);
   var streetNo = (o.address||"").match(/\d+/);
-  var tpl = o.shein ? "shein_mailbox_room" : "wrong_address";
-  var t = tplById(tpl);
+  var tplId = o.shein ? "shein_mailbox_room" : "wrong_address";
+  var tpl = tplById(tplId);
   var c = {
     id: o.parcelId,
     parcelId:o.parcelId, status:o.status || "DELIVERED", deliveryDate:o.deliveryDate,
@@ -678,8 +824,8 @@ function makeCard(o, list){
     consignee:o.consignee, phone:o.phone, ext:o.ext, email:o.email,
     address:o.address, unit:o.unit, postal:o.postal,
     issueDate: todayStr(),
-    tplId:tpl, inputs:{}, tail: t.tail || "", customTitle:"",
-    penalty:t.penalty, reason:t.reason,
+    tplId:tplId, inputs:{}, tail: tpl.tail || "", customTitle:"",
+    penalty:tpl.penalty, reason:tpl.reason,
     notes: o.shein ? "//lost" : "//已和司机沟通",
     listNote: match ? (match.notes||"") : "",
     listType: match ? (match.incidentType||"") : "",
@@ -696,16 +842,16 @@ function makeCard(o, list){
    生成三个输出
    ============================================================ */
 function renderBody(c){
-  var t = tplById(c.tplId);
-  var body = t.body.replace(/\{\{(\w+)\}\}/g, function(_,k){
+  var tpl = tplById(c.tplId);
+  var body = tpl.body.replace(/\{\{(\w+)\}\}/g, function(_,k){
     return c.inputs[k] || "";
   });
-  if(t.tail !== undefined && c.tail) body = body + " " + c.tail;
+  if(tpl.tail !== undefined && c.tail) body = body + " " + c.tail;
   return body;
 }
 function msgTitle(c){
-  var t = tplById(c.tplId);
-  return t.titleField ? (c.customTitle||"") : t.title;
+  var tpl = tplById(c.tplId);
+  return tpl.titleField ? (c.customTitle||"") : tpl.title;
 }
 /* 「32108 Alain」：中介的司机跟中介名；个人司机跟自己的名字（18844 Ismail） */
 function driverLabel(c){
@@ -773,7 +919,7 @@ function wrapRows(rowsHtml){
 /* ============================================================
    渲染
    ============================================================ */
-var ROW_HEAD = ["今天日期","Delivery date","名字","中介","Driver ID","Parcel#","Parcel ID","地址","是否记赔","原因"];
+function rowHead(){ return [t("hToday"),"Delivery date",t("hName"),t("hBroker"),"Driver ID","Parcel#","Parcel ID",t("hAddress"),t("hPenalty"),t("hReason")]; }
 
 function el(tag, cls, txt){
   var e = document.createElement(tag);
@@ -808,7 +954,7 @@ function renderAll(){
   host.textContent = "";
   state.cards.forEach(function(c){ host.appendChild(renderCard(c)); });
   document.getElementById("emptyState").hidden = state.cards.length > 0;
-  document.getElementById("footCount").textContent = state.cards.length + " 单";
+  document.getElementById("footCount").textContent = state.cards.length + " " + t("orders");
   renderList();
 }
 function renderList(){
@@ -816,8 +962,8 @@ function renderList(){
   if(!state.list.length){ panel.hidden = true; return; }
   panel.hidden = false;
   document.getElementById("listCount").textContent = state.list.length;
-  var t = document.getElementById("listTable");
-  t.textContent = "";
+  var host = document.getElementById("listTable");
+  host.textContent = "";
   var have = {};
   state.cards.forEach(function(c){ have[c.driverId] = 1; });
   state.list.forEach(function(r){
@@ -827,10 +973,10 @@ function renderList(){
     meta.appendChild(el("span","id",r.driverId));
     meta.appendChild(el("span","id",r.occurrenceDate));
     if(r.shein) meta.appendChild(el("span","sh","SHEIN"));
-    if(have[r.driverId]) meta.appendChild(el("span",null,"· 已在右边"));
+    if(have[r.driverId]) meta.appendChild(el("span",null,t("inList")));
     row.appendChild(meta);
     if(r.notes) row.appendChild(el("div","lnote",r.notes));
-    t.appendChild(row);
+    host.appendChild(row);
   });
 }
 
@@ -845,7 +991,7 @@ function renderCard(c){
   if(c.status && c.status !== "DELIVERED"){
     head.appendChild(el("span","pill accent", c.status));
   }
-  head.appendChild(el("span","pill" + (c.shein ? " red" : ""), c.shein ? "SHEIN · 直接记丢" : (c.partner||"非 Shein")));
+  head.appendChild(el("span","pill" + (c.shein ? " red" : ""), c.shein ? t("sheinPill") : (c.partner||t("notShein"))));
   head.appendChild(el("div","spacer"));
 
   /* 三连击：消息 → 表格行 → Notes。
@@ -855,12 +1001,12 @@ function renderCard(c){
   var link = groupLink(c.broker);
   var cyc;
   if(step === 0 && link){
-    cyc = el("a","primary cyc wide","① 复制消息 → 去 " + groupLabel(c.broker) + " 群");
+    cyc = el("a","primary cyc wide", t("openGroup") + groupLabel(c.broker) + t("openGroupEnd"));
     cyc.href = link; cyc.target = "_blank"; cyc.rel = "noopener noreferrer";
-    cyc.title = "复制消息并打开群，进去 Ctrl+V";
+    cyc.title = t("openGroupTip");
   } else {
-    cyc = el("button","primary cyc", CYCLE[step].label);
-    cyc.title = CYCLE[step].tip;
+    cyc = el("button","primary cyc", t(CYCLE[step].key));
+    cyc.title = t(CYCLE[step].key + "Tip");
   }
   cyc.dataset.act = "cycle";
   head.appendChild(cyc);
@@ -869,14 +1015,14 @@ function renderCard(c){
   head.appendChild(dots);
 
   if(!link){
-    var setg = el("button","ghost dim","设群链接");
+    var setg = el("button","ghost dim",t("setGroup"));
     setg.dataset.act = "setgroup";
     head.appendChild(setg);
   }
 
-  var del = el("button","ghost","关单");
+  var del = el("button","ghost",t("closeOrder"));
   del.dataset.act = "del";
-  del.title = "这单处理完了：移掉卡片并清空左边的粘贴框";
+  del.title = t("closeTip");
   head.appendChild(del);
   card.appendChild(head);
 
@@ -884,41 +1030,41 @@ function renderCard(c){
   if(c.shein){
     var w = el("div","warn");
     w.appendChild(el("span",null,"⚠"));
-    w.appendChild(el("span",null,"Shein 直接记丢，记丢就不能再修复。消息用简洁版，不含收件人、电话、邮箱、地址——别让司机去找客户「修复」。"));
+    w.appendChild(el("span",null,t("sheinWarn")));
     card.appendChild(w);
   }
   if(c.status && c.status !== "DELIVERED"){
     var w2 = el("div","warn");
     w2.appendChild(el("span",null,"⚠"));
-    w2.appendChild(el("span",null,"这单状态是 " + c.status + "，不是 DELIVERED，下面的模板是给已妥投的单用的。"));
+    w2.appendChild(el("span",null,t("statusWarnA") + c.status + t("statusWarnB")));
     card.appendChild(w2);
   }
   if(c.listNote){
     var n = el("div","note");
-    n.appendChild(el("b",null,"客服记的："));
+    n.appendChild(el("b",null,t("supportLogged")));
     n.appendChild(document.createTextNode(c.listNote + (c.listType ? "（" + c.listType + "）" : "")));
     if(c.listAmbiguous){
-      n.appendChild(el("b",null," ⚠ 这个司机今天有多条投诉，列表里没有单号，自己对一下是哪条"));
+      n.appendChild(el("b",null,t("ambiguous")));
     }
     card.appendChild(n);
   }
 
   /* --- 字段 --- */
   var s1 = el("div","sec");
-  s1.appendChild(el("h3",null,"字段（解析错了直接改）"));
+  s1.appendChild(el("h3",null,t("fieldsTitle")));
   var g1 = el("div","grid");
-  g1.appendChild(field("Delivery date","deliveryDate",c.deliveryDate,{mono:true}));
-  g1.appendChild(field("Driver ID","driverId",c.driverId,{mono:true}));
-  g1.appendChild(field("Parcel #（站点号）","parcelNo",c.parcelNo,{mono:true, missing:!c.parcelNo,
-    placeholder:"Driver Memo 里没有，手填"}));
-  g1.appendChild(field("中介（个人司机留空）","broker",c.broker,{list:"brokerList",
-    sub: c.brokerKnown ? (c.broker ? "名单：" + c.broker : "名单：个人/仓库司机，留空") : "名单里没这个司机，填一次就记住"}));
-  g1.appendChild(field("地址（只作参考，不进表格）","address",c.address));
-  g1.appendChild(field("司机","driverName",c.driverName,{sub:c.warehouse||""}));
+  g1.appendChild(field(t("fDelivery"),"deliveryDate",c.deliveryDate,{mono:true}));
+  g1.appendChild(field(t("fDriverId"),"driverId",c.driverId,{mono:true}));
+  g1.appendChild(field(t("fParcelNo"),"parcelNo",c.parcelNo,{mono:true, missing:!c.parcelNo,
+    placeholder:t("fParcelNoPh")}));
+  g1.appendChild(field(t("fBroker"),"broker",c.broker,{list:"brokerList",
+    sub: c.brokerKnown ? (c.broker ? t("rosterSays") + c.broker : t("rosterSolo")) : t("rosterUnknown")}));
+  g1.appendChild(field(t("fAddress"),"address",c.address));
+  g1.appendChild(field(t("fDriver"),"driverName",c.driverName,{sub:c.warehouse||""}));
   s1.appendChild(g1);
 
   var det = el("details","custinfo");
-  var sum = el("summary",null, c.shein ? "客户信息（Shein 简洁版不会写进消息）" : "客户信息（会写进消息）");
+  var sum = el("summary",null, c.shein ? t("custInfoShein") : t("custInfo"));
   if(!c.shein) det.open = true;
   det.appendChild(sum);
   var g2 = el("div","grid");
@@ -934,39 +1080,39 @@ function renderCard(c){
 
   /* --- 场景 --- */
   var s2 = el("div","sec");
-  s2.appendChild(el("h3",null,"场景"));
+  s2.appendChild(el("h3",null,t("sceneTitle")));
   var g3 = el("div","grid");
 
   var fw = el("div","f");
-  fw.appendChild(el("label",null,"模板"));
+  fw.appendChild(el("label",null,t("fTemplate")));
   var sel = el("select"); sel.dataset.k = "tplId";
-  TPL.forEach(function(t){
-    if(c.shein !== !!t.shein && t.id !== "custom") return;
-    var op = el("option",null,t.label); op.value = t.id;
-    if(t.id === c.tplId) op.selected = true;
+  TPL.forEach(function(tp){
+    if(c.shein !== !!tp.shein && tp.id !== "custom") return;
+    var op = el("option",null,loc(tp.label, tp.labelEn)); op.value = tp.id;
+    if(tp.id === c.tplId) op.selected = true;
     sel.appendChild(op);
   });
   fw.appendChild(sel);
   g3.appendChild(fw);
 
-  var t = tplById(c.tplId);
-  if(t.titleField){
-    g3.appendChild(field("消息标题（可留空）","customTitle",c.customTitle));
+  var tpl = tplById(c.tplId);
+  if(tpl.titleField){
+    g3.appendChild(field(t("fMsgTitle"),"customTitle",c.customTitle));
   }
-  (t.fields||[]).forEach(function(f){
-    g3.appendChild(field(f.label,"in_"+f.k,c.inputs[f.k],{placeholder:f.ph||"", missing:!c.inputs[f.k]}));
+  (tpl.fields||[]).forEach(function(f){
+    g3.appendChild(field(loc(f.label,f.labelEn),"in_"+f.k,c.inputs[f.k],{placeholder:loc(f.ph||"",f.phEn), missing:!c.inputs[f.k]}));
   });
-  if(t.tail !== undefined){
-    g3.appendChild(field("补充说明（接在正文后面）","tail",c.tail,{placeholder:"可留空"}));
+  if(tpl.tail !== undefined){
+    g3.appendChild(field(t("fTail"),"tail",c.tail,{placeholder:t("fTailPh")}));
   }
 
   var fp = el("div","f");
-  fp.appendChild(el("label",null,"是否记赔（表格第 9 列）"));
+  fp.appendChild(el("label",null,t("fPenalty")));
   var psel = el("select"); psel.dataset.k = "penalty";
   var gTop = el("optgroup"), gRest = el("optgroup");
-  gTop.label = "常用"; gRest.label = "其他（表格下拉的全部选项）";
+  gTop.label = t("penCommon"); gRest.label = t("penOthers");
   PENALTIES.forEach(function(p){
-    var op = el("option",null,p.label || p.v); op.value = p.v;
+    var op = el("option",null, p.labelKey ? t(p.labelKey) : p.v); op.value = p.v;
     if(p.v === c.penalty) op.selected = true;
     (p.top ? gTop : gRest).appendChild(op);
   });
@@ -974,28 +1120,27 @@ function renderCard(c){
   fp.appendChild(psel);
   /* 规矩：Shein 直接记丢，I 列填红的；非 Shein 留空，5 天后再定要不要司机赔 */
   if(c.shein && !c.penalty){
-    fp.appendChild(el("div","sublabel warnlab","Shein 直接记丢，这里要填红色那几项"));
+    fp.appendChild(el("div","sublabel warnlab",t("warnSheinPen")));
   } else if(!c.shein && c.penalty){
-    fp.appendChild(el("div","sublabel warnlab","非 Shein 一般先留空，5 天后再定是否记赔"));
+    fp.appendChild(el("div","sublabel warnlab",t("warnNonShein")));
   } else if(!c.penalty && c.deliveryDate){
-    fp.appendChild(el("div","sublabel","留空 → " + plusDays(c.deliveryDate,5) +
-      " 复查；红色 = 司机赔钱"));
+    fp.appendChild(el("div","sublabel",t("reviewA") + plusDays(c.deliveryDate,5) + t("reviewB")));
   }
   g3.appendChild(fp);
-  g3.appendChild(field("原因（第 10 列）","reason",c.reason));
+  g3.appendChild(field(t("fReason"),"reason",c.reason));
   s2.appendChild(g3);
   card.appendChild(s2);
 
   /* --- 输出 1：消息 --- */
   var s3 = el("div","sec");
   var oh = el("div","outhead");
-  oh.appendChild(el("h3",null,"① 发给中介的消息"));
+  oh.appendChild(el("h3",null,t("out1")));
   oh.appendChild(el("div","spacer"));
   if(c.msgEdited !== null){
-    var rb = el("button","copy","重新生成"); rb.dataset.act = "regen";
+    var rb = el("button","copy",t("regen")); rb.dataset.act = "regen";
     oh.appendChild(rb);
   }
-  var cb = el("button","copy","复制"); cb.dataset.act = "copyMsg";
+  var cb = el("button","copy",t("copy")); cb.dataset.act = "copyMsg";
   oh.appendChild(cb);
   s3.appendChild(oh);
   var ta = el("textarea","msg");
@@ -1008,9 +1153,9 @@ function renderCard(c){
   /* --- 输出 2：表格行 --- */
   var s4 = el("div","sec");
   var oh2 = el("div","outhead");
-  oh2.appendChild(el("h3",null,"② 表格行（10 列）"));
+  oh2.appendChild(el("h3",null,t("out2")));
   oh2.appendChild(el("div","spacer"));
-  var cb2 = el("button","copy","复制这一行"); cb2.dataset.act = "copyRow";
+  var cb2 = el("button","copy",t("copyRow")); cb2.dataset.act = "copyRow";
   oh2.appendChild(cb2);
   s4.appendChild(oh2);
   s4.appendChild(rowTable(c));
@@ -1019,9 +1164,9 @@ function renderCard(c){
   /* --- 输出 3：官网 Notes --- */
   var s5 = el("div","sec");
   var oh3 = el("div","outhead");
-  oh3.appendChild(el("h3",null,"③ 官网 incident_form 的 Notes"));
+  oh3.appendChild(el("h3",null,t("out3")));
   oh3.appendChild(el("div","spacer"));
-  var cb3 = el("button","copy","复制"); cb3.dataset.act = "copyNotes";
+  var cb3 = el("button","copy",t("copy")); cb3.dataset.act = "copyNotes";
   oh3.appendChild(cb3);
   s5.appendChild(oh3);
   var nta = el("textarea","notes");
@@ -1029,7 +1174,8 @@ function renderCard(c){
   s5.appendChild(nta);
   var chips = el("div","chips");
   NOTE_CHIPS.forEach(function(x){
-    var b = el("button","chip",x); b.dataset.act = "chip"; b.dataset.val = x;
+    var b = el("button","chip",x.v); b.dataset.act = "chip"; b.dataset.val = x.v;
+    if(LANG === "en" && x.en) b.title = x.en;
     chips.appendChild(b);
   });
   s5.appendChild(chips);
@@ -1042,7 +1188,7 @@ function rowTable(c){
   var wrap = el("div","tsvwrap");
   var t = el("table","tsv");
   var thead = el("thead"), tr = el("tr");
-  ROW_HEAD.forEach(function(h){ tr.appendChild(el("th",null,h)); });
+  rowHead().forEach(function(h){ tr.appendChild(el("th",null,h)); });
   thead.appendChild(tr); t.appendChild(thead);
   var tb = el("tbody"), tr2 = el("tr");
   var cells = rowCells(c);
@@ -1112,9 +1258,9 @@ document.getElementById("cards").addEventListener("change", function(e){
   /* 中介改了，头上那个「去 X 群」也得跟着换 */
   if(k === "broker"){ c.broker = e.target.value.trim(); cardEl.replaceWith(renderCard(c)); save(); return; }
   c.tplId = e.target.value;
-  var t = tplById(c.tplId);
-  c.penalty = t.penalty; c.reason = t.reason;
-  c.tail = t.tail || "";
+  var tpl = tplById(c.tplId);
+  c.penalty = tpl.penalty; c.reason = tpl.reason;
+  c.tail = tpl.tail || "";
   c.msgEdited = null;
   cardEl.replaceWith(renderCard(c));
   save();
@@ -1127,11 +1273,11 @@ document.getElementById("cards").addEventListener("click", function(e){
   if(!c) return;
   var act = btn.dataset.act;
   if(act === "copyMsg"){
-    copy(cardEl.querySelector("textarea.msg").value, btn, c.shein ? "Shein 简洁版已复制" : "消息已复制");
+    copy(cardEl.querySelector("textarea.msg").value, btn, c.shein ? t("tMsgShein") : t("tMsg"));
   } else if(act === "copyRow"){
-    copyRich(buildRow(c), wrapRows(buildRowHtml(c)), btn, "表格行已复制（带颜色）");
+    copyRich(buildRow(c), wrapRows(buildRowHtml(c)), btn, t("tRow"));
   } else if(act === "copyNotes"){
-    copy(cardEl.querySelector("textarea.notes").value, btn, "Notes 已复制");
+    copy(cardEl.querySelector("textarea.notes").value, btn, t("tNotes"));
   } else if(act === "chip"){
     var nta = cardEl.querySelector("textarea.notes");
     var v = nta.value.trim();
@@ -1145,12 +1291,12 @@ document.getElementById("cards").addEventListener("click", function(e){
     var step = c.step || 0;
     if(step === 0){
       copy(cardEl.querySelector("textarea.msg").value, null,
-           c.shein ? "① Shein 简洁版消息已复制" : "① 消息已复制");
+           c.shein ? t("tMsgShein1") : t("tMsg1"));
     } else if(step === 1){
-      copyRich(buildRow(c), wrapRows(buildRowHtml(c)), null, "② 表格行已复制（带颜色）");
+      copyRich(buildRow(c), wrapRows(buildRowHtml(c)), null, t("tRow2"));
     } else {
       /* 第三步：复制 Notes 之后这单就算处理完了，直接关单 */
-      copy(cardEl.querySelector("textarea.notes").value, null, "③ Notes 已复制，已关单");
+      copy(cardEl.querySelector("textarea.notes").value, null, t("tNotes3"));
       closeCard(c);
       return;
     }
@@ -1162,13 +1308,13 @@ document.getElementById("cards").addEventListener("click", function(e){
     openGroups(c.broker);
   } else if(act === "del"){
     closeCard(c);
-    toast("已关单，粘贴框清空了");
+    toast(t("tClosed"));
   }
 });
 
 document.getElementById("btnParse").addEventListener("click", function(){
   var txt = norm(document.getElementById("raw").value);
-  if(!txt.trim()){ toast("先把 Ctrl+A 的文字粘进来"); return; }
+  if(!txt.trim()){ toast(t("tPasteFirst")); return; }
   var list = parseList(txt);
   var orders = parseOrders(txt);
   if(list.length) state.list = list;
@@ -1181,17 +1327,17 @@ document.getElementById("btnParse").addEventListener("click", function(){
   state.date = todayStr();
   renderAll(); save();
   var msg = [];
-  if(list.length) msg.push("列表 " + list.length + " 条");
-  msg.push("新增 " + added + " 单");
-  if(dup) msg.push("跳过重复 " + dup);
+  if(list.length) msg.push(t("hintList") + list.length + t("hintListEnd"));
+  msg.push(t("hintAdded") + added + t("hintAddedEnd"));
+  if(dup) msg.push(t("hintDup") + dup + t("hintDupEnd"));
   document.getElementById("parseHint").textContent = msg.join(" · ");
-  if(!added && !list.length){ toast("没认出 Edit Order 的内容"); return; }
+  if(!added && !list.length){ toast(t("tNoParse")); return; }
   /* 解析成功就把框腾空，下一单直接粘 */
   document.getElementById("raw").value = "";
 });
 
 document.getElementById("btnClear").addEventListener("click", function(){
-  if(!confirm("清空所有卡片和列表？")) return;
+  if(!confirm(t("confirmClear"))) return;
   state = {date: todayStr(), cards: [], list: [], handler: state.handler};
   document.getElementById("raw").value = "";
   document.getElementById("parseHint").textContent = "";
@@ -1199,17 +1345,17 @@ document.getElementById("btnClear").addEventListener("click", function(){
 });
 
 document.getElementById("btnCopyAll").addEventListener("click", function(){
-  if(!state.cards.length){ toast("还没有单子"); return; }
+  if(!state.cards.length){ toast(t("tNoCards")); return; }
   copyRich(
     state.cards.map(buildRow).join("\n"),
     wrapRows(state.cards.map(buildRowHtml).join("")),
-    this, state.cards.length + " 行已复制（带颜色）");
+    this, state.cards.length + t("tRowsB"));
 });
 document.getElementById("btnCopyMsgAll").addEventListener("click", function(){
-  if(!state.cards.length){ toast("还没有单子"); return; }
+  if(!state.cards.length){ toast(t("tNoCards")); return; }
   copy(state.cards.map(function(c){
     return c.msgEdited !== null ? c.msgEdited : buildMessage(c);
-  }).join("\n\n———\n\n"), this, "全部消息已复制");
+  }).join("\n\n———\n\n"), this, t("tAllMsg"));
 });
 
 /* ---------- 群链接 ---------- */
@@ -1246,7 +1392,7 @@ document.getElementById("btnGroupSave").addEventListener("click", function(){
     else delete GROUPS[inp.dataset.group];
   });
   saveGroups();
-  document.getElementById("groupHint").textContent = "存了 " + n + " 个群";
+  document.getElementById("groupHint").textContent = t("tGroupsSaved") + n + t("tGroupsSavedB");
   renderAll();
 });
 
@@ -1263,13 +1409,20 @@ document.getElementById("btnRosterSave").addEventListener("click", function(){
     var m2 = l.match(/^\s*(\d{3,8})\s*$/);
     if(m2){ rememberBroker(m2[1], ""); n++; }
   });
-  document.getElementById("rosterHint").textContent = "更新了 " + n + " 个司机";
+  document.getElementById("rosterHint").textContent = t("tRosterSaved") + n + t("tRosterSavedB");
   state.cards.forEach(function(c){
     if(Object.prototype.hasOwnProperty.call(ROSTER, c.driverId)){
       c.broker = ROSTER[c.driverId]; c.brokerKnown = true;
     }
   });
   renderAll(); save();
+});
+
+document.getElementById("btnLang").addEventListener("click", function(){
+  LANG = (LANG === "en") ? "zh" : "en";
+  try{ localStorage.setItem(LS_KEY+".lang", LANG); }catch(e){}
+  applyStatic();
+  renderAll();
 });
 
 document.getElementById("btnTheme").addEventListener("click", function(){
@@ -1284,10 +1437,10 @@ function copy(text, btn, msg){
   function done(){
     if(btn){
       var old = btn.textContent;
-      btn.textContent = "已复制"; btn.classList.add("done");
+      btn.textContent = t("copied"); btn.classList.add("done");
       setTimeout(function(){ btn.textContent = old; btn.classList.remove("done"); }, 1400);
     }
-    toast(msg || "已复制");
+    toast(msg || t("copied"));
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
@@ -1299,10 +1452,10 @@ function copyRich(text, html, btn, msg){
   function done(){
     if(btn){
       var old = btn.textContent;
-      btn.textContent = "已复制"; btn.classList.add("done");
+      btn.textContent = t("copied"); btn.classList.add("done");
       setTimeout(function(){ btn.textContent = old; btn.classList.remove("done"); }, 1400);
     }
-    toast(msg || "已复制");
+    toast(msg || t("copied"));
   }
   if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
     try{
@@ -1330,7 +1483,7 @@ function fallbackRich(html, done){
   var sel = window.getSelection();
   sel.removeAllRanges(); sel.addRange(range);
   try{ document.execCommand("copy"); done(); }
-  catch(e){ toast("复制失败，手动选中复制吧"); }
+  catch(e){ toast(t("tCopyFail")); }
   sel.removeAllRanges();
   document.body.removeChild(d);
 }
@@ -1340,19 +1493,24 @@ function fallback(text, done){
   ta.style.position = "fixed"; ta.style.opacity = "0";
   document.body.appendChild(ta); ta.select();
   try{ document.execCommand("copy"); done(); }
-  catch(e){ toast("复制失败，手动选中复制吧"); }
+  catch(e){ toast(t("tCopyFail")); }
   document.body.removeChild(ta);
 }
 var toastTimer = null;
 function toast(msg){
-  var t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
+  var box = document.getElementById("toast");
+  box.textContent = msg; box.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  toastTimer = setTimeout(function(){ box.classList.remove("show"); }, 1800);
 }
 
 /* ---------- 启动 ---------- */
 (function init(){
+  try{
+    var lg = localStorage.getItem(LS_KEY+".lang");
+    if(lg === "en" || lg === "zh") LANG = lg;
+  }catch(e){}
+  applyStatic();
   load();
 
   var hsel = document.getElementById("handler");
@@ -1382,6 +1540,7 @@ function toast(msg){
     var th = localStorage.getItem(LS_KEY+".theme");
     if(th) document.documentElement.setAttribute("data-theme", th);
   }catch(e){}
+  applyStatic();
   renderAll();
 })();
 </script>
