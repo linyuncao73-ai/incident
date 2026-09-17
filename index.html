@@ -433,20 +433,34 @@ function groupLink(broker){
   return TEAM_CHATS[k] || "";
 }
 
-/* 这些是要写进官网表单的原文，不翻译；英文界面下鼠标停上去给一句英文解释 */
+/* 官网表单里要写的备注短语，中英两套；切语言时已经填好的也会跟着换 */
 var NOTE_CHIPS = [
-  {v:"//lost", en:"written off as lost"},
-  {v:"//已和司机沟通", en:"talked to the driver"},
-  {v:"//delivered, message proof uploaded", en:""},
-  {v:"//delivered. POD updated", en:""},
-  {v:"//delivered. POD can not be updated", en:""},
-  {v:"//fixed, can not update POD", en:""},
-  {v:"//已归仓", en:"returned to the warehouse"},
-  {v:"//已提醒司机", en:"reminded the driver"},
-  {v:"//已提醒司机需要拍到交接的照片", en:"reminded the driver to photograph the handover"},
-  {v:"//如果之后有投诉没送到就记丢", en:"if another complaint comes in, write it off"},
-  {v:"//这单已经记丢过一次了，这个incident里面不记丢", en:"already written off once — not counted again here"}
+  ["//lost", "//lost"],
+  ["//已和司机沟通", "//talked to the driver"],
+  ["//delivered, message proof uploaded", "//delivered, message proof uploaded"],
+  ["//delivered. POD updated", "//delivered. POD updated"],
+  ["//delivered. POD can not be updated", "//delivered. POD can not be updated"],
+  ["//fixed, can not update POD", "//fixed, can not update POD"],
+  ["//已归仓", "//returned to warehouse"],
+  ["//已提醒司机", "//driver reminded"],
+  ["//已提醒司机需要拍到交接的照片", "//driver reminded to photograph the handover"],
+  ["//如果之后有投诉没送到就记丢", "//if another complaint comes in, mark it lost"],
+  ["//这单已经记丢过一次了，这个incident里面不记丢", "//already marked lost once, not counted again in this incident"]
 ];
+/* 长的先替换，免得 //已提醒司机 把 //已提醒司机需要拍到交接的照片 截断 */
+var NOTE_PAIRS = NOTE_CHIPS.slice().sort(function(a,b){
+  return Math.max(b[0].length,b[1].length) - Math.max(a[0].length,a[1].length);
+});
+/* 把已经填好的备注换成当前语言的写法 */
+function localizeNotes(v){
+  if(!v) return v;
+  NOTE_PAIRS.forEach(function(p){
+    var from = (LANG === "en") ? p[0] : p[1];
+    var to   = (LANG === "en") ? p[1] : p[0];
+    if(from !== to && v.indexOf(from) >= 0) v = v.split(from).join(to);
+  });
+  return v;
+}
 
 /* ---------- 场景模板 ---------- */
 var TPL = [
@@ -826,7 +840,7 @@ function makeCard(o, list){
     issueDate: todayStr(),
     tplId:tplId, inputs:{}, tail: tpl.tail || "", customTitle:"",
     penalty:tpl.penalty, reason:tpl.reason,
-    notes: o.shein ? "//lost" : "//已和司机沟通",
+    notes: o.shein ? "//lost" : loc("//已和司机沟通", "//talked to the driver"),
     listNote: match ? (match.notes||"") : "",
     listType: match ? (match.incidentType||"") : "",
     listAmbiguous: ambiguous,
@@ -1170,12 +1184,13 @@ function renderCard(c){
   oh3.appendChild(cb3);
   s5.appendChild(oh3);
   var nta = el("textarea","notes");
+  c.notes = localizeNotes(c.notes);
   nta.dataset.k = "notes"; nta.value = c.notes; nta.spellcheck = false;
   s5.appendChild(nta);
   var chips = el("div","chips");
   NOTE_CHIPS.forEach(function(x){
-    var b = el("button","chip",x.v); b.dataset.act = "chip"; b.dataset.val = x.v;
-    if(LANG === "en" && x.en) b.title = x.en;
+    var v = loc(x[0], x[1]);
+    var b = el("button","chip",v); b.dataset.act = "chip"; b.dataset.val = v;
     chips.appendChild(b);
   });
   s5.appendChild(chips);
